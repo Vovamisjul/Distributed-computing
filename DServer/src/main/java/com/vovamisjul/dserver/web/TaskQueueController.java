@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController("/tasks")
+@RestController()
+@RequestMapping("/tasks")
 public class TaskQueueController {
 
     @RequestMapping(path = "/add", method = RequestMethod.PUT)

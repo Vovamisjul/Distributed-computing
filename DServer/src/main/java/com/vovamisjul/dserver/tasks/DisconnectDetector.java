@@ -2,7 +2,7 @@ package com.vovamisjul.dserver.tasks;
 
 import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.models.Device;
-import com.vovamisjul.dserver.web.filters.JWTAuthorizationFilter;
+import com.vovamisjul.dserver.web.filters.JWTDeviceAuthFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.DisposableBean;
@@ -15,7 +15,7 @@ import javax.annotation.PostConstruct;
 @Component
 class DisconnectDetector implements DisposableBean, Runnable {
 
-    private static Logger LOG = LogManager.getLogger(JWTAuthorizationFilter.class);
+    private static Logger LOG = LogManager.getLogger(JWTDeviceAuthFilter.class);
 
     @Value("${device.maxTimeToWait}")
     private long maxTimeToWait;

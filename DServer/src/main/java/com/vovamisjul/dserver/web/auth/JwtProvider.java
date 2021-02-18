@@ -2,6 +2,8 @@ package com.vovamisjul.dserver.web.auth;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.vovamisjul.dserver.models.DeviceDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -34,16 +36,27 @@ public class JwtProvider {
                 .sign(HMAC512(jwtSecret.getBytes()));
     }
 
-    public String getLoginFromToken(String token) {
+    public String getDeviceIdFromToken(String token) {
         return JWT.require(Algorithm.HMAC512(jwtSecret.getBytes()))
                 .build()
-                .verify(token.replace("Bearer ", ""))
+                .verify(token)
                 .getSubject();
+    }
+
+    public String getLoginFromUserToken(String token) {
+        DecodedJWT jwt = JWT.require(Algorithm.HMAC512(jwtSecret.getBytes()))
+                .build()
+                .verify(token);
+        Claim user = jwt.getClaim("user");
+        if (user.isNull() || user.asBoolean() == false) {
+            return null;
+        }
+        return jwt.getSubject();
     }
 
     public void verifyToken(String token) {
         JWT.require(Algorithm.HMAC512(jwtSecret.getBytes()))
                 .build()
-                .verify(token.replace("Bearer ", ""));
+                .verify(token);
     }
 }

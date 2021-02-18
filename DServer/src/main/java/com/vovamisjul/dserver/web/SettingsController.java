@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@RestController
+@RestController()
+@RequestMapping("/settings")
 public class SettingsController {
 
     @Autowired

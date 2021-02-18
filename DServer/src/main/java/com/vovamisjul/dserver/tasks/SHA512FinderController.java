@@ -24,7 +24,7 @@ public class SHA512FinderController extends AbstractTaskController {
     private List<Device> devices;
     private Map<String, String> lastDevicesJob = new HashMap<>(); // value - start string to hash
     private List<String> answers = new ArrayList<>();
-    private Deque<Device> lostDevices = new LinkedList<>();
+    private Queue<Device> lostDevices = new LinkedList<>();
     private volatile boolean end = false;
     private static final String base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -137,7 +137,7 @@ public class SHA512FinderController extends AbstractTaskController {
     private ClientMessage creaneNextClientMessage(String deviceId) {
         ClientMessage message = new ClientMessage("start", id);
         message.addData("required", requiredHash);
-        Device lostDevice = lostDevices.pollFirst();
+        Device lostDevice = lostDevices.poll();
         if (lostDevice != null) {
             String notProcessedHashed = lastDevicesJob.get(lostDevice.getId());
             message.addData("start", notProcessedHashed);
