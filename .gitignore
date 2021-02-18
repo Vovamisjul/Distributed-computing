@@ -1,0 +1,39 @@
+/DServer/HELP.md
+/DServer/target/
+/DServer/.mvn/
+!**/src/main/**/target/
+!**/src/test/**/target/
+/DServer/mvnw
+/DServer/mvnw.cmd
+
+### STS ###
+/DServer/.apt_generated
+/DServer/.classpath
+/DServer/.factorypath
+/DServer/.project
+/DServer/.settings
+/DServer/.springBeans
+/DServer/.sts4-cache
+
+### IntelliJ IDEA ###
+/DServer/.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/DServer/nbproject/private/
+/DServer/nbbuild/
+/DServer/dist/
+/DServer/nbdist/
+/DServer/.nb-gradle/
+/DServerbuild/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+/DistributionWorker/.vs
+*.sln
+/DistributionWorker/DistributionWorker/bin/
+/DistributionWorker/DistributionWorker/obj/
