@@ -15,12 +15,11 @@ import static com.vovamisjul.dserver.models.JobStatus.READY;
 
 @Component
 public class DeviceController implements DeviceRepository {
-    @Value("${device.maxTimeToWait}")
-    private long maxTimeToWait;
+    @Value("${device.maxTimeToDisconnect}")
+    private long maxTimeToDisconnect;
 
     private ConcurrentMap<String, Device> devices = new ConcurrentHashMap<>();
 
-    @Override
     public List<Device> getAllFreeDevices(String taskId) {
         return devices.values().stream()
                 .filter(device -> device.getAvaliableTasks().contains(taskId))
@@ -46,9 +45,16 @@ public class DeviceController implements DeviceRepository {
 
     public List<Device> getDisconnectedDevices() {
         List<Device> disconnected = devices.values().stream()
-                .filter(device -> System.currentTimeMillis() - device.getLastTimeActive() > maxTimeToWait)
+                .filter(device -> System.currentTimeMillis() - device.getLastTimeActive() > maxTimeToDisconnect)
                 .collect(Collectors.toList());
         disconnected.forEach(device -> device.setDisconnected(true));
         return disconnected;
+    }
+
+    public void updatePerformanceRate(String deviceId, float rate) {
+        devices.computeIfPresent(deviceId, (id, device) -> {
+            device.setPerformanceRate(rate);
+            return device;
+        });
     }
 }

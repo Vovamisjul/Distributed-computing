@@ -7,6 +7,13 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Initialized="Window_Initialized">
     <Grid>
-        
+        <Menu HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" Width="782" Background="WhiteSmoke">
+            <MenuItem Header="Tasks">
+                <MenuItem Header="All tasks" Click="MenuItem_Click"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Settings" Click="MenuItem_Click_1">
+            </MenuItem>
+        </Menu>
+
     </Grid>
 </Window>

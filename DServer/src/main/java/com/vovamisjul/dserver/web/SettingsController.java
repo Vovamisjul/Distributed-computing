@@ -1,7 +1,9 @@
 package com.vovamisjul.dserver.web;
 
+import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.dao.DeviceDao;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
+import com.vovamisjul.dserver.tasks.TaskInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +13,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -23,21 +24,25 @@ public class SettingsController {
     private DeviceDao deviceDao;
 
     @Autowired
+    private DeviceController deviceController;
+
+    @Autowired
     private TaskControllerRepository taskControllerRepository;
 
-    @RequestMapping(value = "/power", method = RequestMethod.PUT, consumes = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/power", method = RequestMethod.PUT)
     public void setPower(
             @Valid @RequestBody(required = true) ComputingPower computingPower,
             HttpServletRequest request
     ) {
         String id = request.getRemoteUser();
-        deviceDao.updatePerformance(id, computingPower.timeToCompute);
+        deviceDao.updatePerformance(id, computingPower.rate);
+        deviceController.updatePerformanceRate(id, computingPower.rate);
     }
 
     @Validated
     private static class ComputingPower {
         @NotNull
-        public Float timeToCompute;
+        public Float rate;
     }
 
 
@@ -46,19 +51,7 @@ public class SettingsController {
             @Valid @RequestBody(required = true) ComputingPower computingPower,
             HttpServletRequest request
     ) {
-        return taskControllerRepository.getAllControllers().values().stream()
-                .map(controller -> new TaskInfo(controller.getId(), controller.getDescription()))
-                .collect(Collectors.toList());
-    }
-
-    private class TaskInfo {
-        public String id;
-        public String description;
-
-        public TaskInfo(String id, String description) {
-            this.id = id;
-            this.description = description;
-        }
+        return taskControllerRepository.getTaskInfos();
     }
 
 

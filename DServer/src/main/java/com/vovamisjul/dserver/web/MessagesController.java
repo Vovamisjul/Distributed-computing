@@ -4,16 +4,25 @@ import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.dao.DeviceDao;
 import com.vovamisjul.dserver.models.ClientMessage;
 import com.vovamisjul.dserver.models.Device;
+import com.vovamisjul.dserver.tasks.AbstractTaskController;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.MultiValueMapAdapter;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 import static com.vovamisjul.dserver.models.JobStatus.READY;
@@ -39,31 +48,36 @@ public class MessagesController {
     @Autowired
     private DeviceDao deviceDao;
 
-    @Autowired
-    private ExecutorService executorService;
-
     /**
      * Processes message from client
      * @return Messages to client to process (like new task, e.g.)
      */
-    @RequestMapping(value = "/messages", method = POST, consumes = APPLICATION_JSON_VALUE)
-    public DeferredResult<List<ClientMessage>> messages(ClientMessage clientMessage, HttpServletRequest request) {
-        DeferredResult<List<ClientMessage>> result = new DeferredResult<>();
+    @RequestMapping(value = "/messages", method = POST)
+    public DeferredResult<ResponseEntity<List<ClientMessage>>> messages(@RequestBody(required = false) ClientMessage clientMessage, HttpServletRequest request) {
+        DeferredResult<ResponseEntity<List<ClientMessage>>> result = new DeferredResult<>();
         String deviceId = request.getRemoteUser();
-        executorService.submit(() -> {
+        CompletableFuture.runAsync(() -> {
             Device device = deviceController.getDevice(deviceId);
             if (device == null) {
                 device = deviceDao.getDevice(deviceId);
                 deviceController.addDevice(device);
+                Objects.requireNonNull(device, "Should be not null after auth");
             }
             device.setLastTimeActive(System.currentTimeMillis());
+            if (device.getPerformanceRate() == null) {
+                result.setResult(new ResponseEntity<>(createError(Responses.NULL_PERFORMANCE_RATE), HttpStatus.FORBIDDEN));
+                return;
+            }
             if (clientMessage != null) {
                 preprocessClientMessage(device, clientMessage);
-                taskControllerRepository.getTaskController(clientMessage.getTaskId()).processClientMessage(deviceId, clientMessage);
+                AbstractTaskController controller = taskControllerRepository.getController(clientMessage.getTaskCopyId());
+                if (controller != null) {
+                    controller.processClientMessage(deviceId, clientMessage);
+                }
             }
             try {
-                result.setResult(deviceController.getDevice(deviceId).awaitMessages(10_000L));
-            } catch (InterruptedException e) {
+                result.setResult(new ResponseEntity<>(deviceController.getDevice(deviceId).awaitMessages(10_000L), HttpStatus.OK)) ;
+            } catch (Exception e) {
                 LOG.error("Error while getting messages", e);
             }
         });
@@ -74,9 +88,17 @@ public class MessagesController {
         switch (clientMessage.getType()) {
             case START:
                 device.setJobStatus(READY);
-                device.setCurrentTaskId(clientMessage.getData("taskId"));
+                device.setCurrentTaskCopyId(clientMessage.getTaskCopyId());
                 break;
 
         }
+    }
+
+    private MultiValueMap<String, String> createError(String error) {
+        return new MultiValueMapAdapter<>(Collections.singletonMap("error", Collections.singletonList(error)));
+    }
+
+    private interface Responses {
+        static String NULL_PERFORMANCE_RATE = "1";
     }
 }

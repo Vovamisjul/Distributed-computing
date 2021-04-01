@@ -11,12 +11,11 @@ import static com.vovamisjul.dserver.models.JobStatus.UNACTIVE;
 @ParametersAreNonnullByDefault
 public class Device {
     private String id;
-    @Nullable
     private volatile Float performanceRate;
     private volatile JobStatus jobStatus = UNACTIVE;
     private volatile List<ClientMessage> unsentMessages = new LinkedList<>();
     private Set<String> avaliableTasks = new HashSet<>();
-    private volatile String currentTaskId;
+    private volatile String currentTaskCopyId;
     private volatile long lastTimeActive;
     private volatile boolean disconnected;
 
@@ -33,9 +32,9 @@ public class Device {
     }
 
     public List<ClientMessage> takeMessages() {
-        List<ClientMessage> returnValue = new ArrayList<>();
+        List<ClientMessage> returnValue;
         synchronized (this) {
-            Collections.copy(returnValue, unsentMessages);
+            returnValue = new ArrayList<>(unsentMessages);
             unsentMessages.clear();
         }
         return returnValue;
@@ -56,8 +55,7 @@ public class Device {
         this.id = id;
     }
 
-    @Nullable
-    public float getPerformanceRate() {
+    public Float getPerformanceRate() {
         return performanceRate;
     }
 
@@ -89,12 +87,12 @@ public class Device {
         this.lastTimeActive = lastTimeActive;
     }
 
-    public String getCurrentTaskId() {
-        return currentTaskId;
+    public String getCurrentTaskCopyId() {
+        return currentTaskCopyId;
     }
 
-    public void setCurrentTaskId(String currentTaskId) {
-        this.currentTaskId = currentTaskId;
+    public void setCurrentTaskCopyId(String currentTaskCopyId) {
+        this.currentTaskCopyId = currentTaskCopyId;
     }
 
     public boolean isDisconnected() {

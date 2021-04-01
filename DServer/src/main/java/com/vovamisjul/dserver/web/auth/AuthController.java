@@ -44,7 +44,7 @@ public class AuthController {
     @Autowired
     private JwtProvider jwtProvider;
 
-    @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ResponseEntity<Response> register(@Valid @RequestBody Registration registration) {
         String id = UUID.randomUUID().toString();
         deviceDao.addNewDevice(id, bCryptPasswordEncoder.encode(registration.password));
@@ -57,7 +57,7 @@ public class AuthController {
         public String password;
     }
 
-    @RequestMapping(value = "/login", method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<Response> login(@Valid @RequestBody Authentication authentication) {
         DeviceDetails device = deviceDao.getDeviceDetails(authentication.id);
         if (device != null && bCryptPasswordEncoder.matches(authentication.password, device.getPassword())) {
@@ -74,7 +74,7 @@ public class AuthController {
         public String password;
     }
 
-    @RequestMapping(value = "/userlogin", method = RequestMethod.POST, consumes = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/userlogin", method = RequestMethod.POST)
     public ResponseEntity<Response> loginUser(@Valid @RequestBody UserAuthentication authentication) {
         UserDetails user = userDao.getUserByUsername(authentication.username);
         if (user != null && bCryptPasswordEncoder.matches(authentication.password, user.getPassword())) {

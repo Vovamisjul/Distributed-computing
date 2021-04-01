@@ -13,6 +13,8 @@ import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 @Component
@@ -21,19 +23,21 @@ public class DeviceDao {
     // language=SQL
     private static String INSERT_DEVISE = "INSERT FROM `devices` (`id`, `password`) VALUE (?,?)";
     // language=SQL
-    private static String SELECT_DEVISE = "SELECT * FROM `devices` WHERE `id`=?";
+    private static String SELECT_DEVISE = "SELECT `devices`.`id`, `performance_rate`, GROUP_CONCAT(DISTINCT `device_tasks`.`task_id` SEPARATOR ', ') AS `tasks` FROM `devices` LEFT JOIN `device_tasks` ON `devices`.`id` = `device_tasks`.`device_id` WHERE `devices`.`id`=?";
     // language=SQL
-    private static String SELECT_DEVISES_TASKS = "SELECT * FROM `device_tasks` WHERE `device_id`=?";
+    private static String SELECT_DEVISES_DETAILS = "SELECT `id`, `password` FROM `devices` WHERE `id`=?";
     // language=SQL
     private static String CLEAR_DEVICE_TASKS = "DELETE FROM `device_tasks` WHERE `device_id`=?";
     // language=SQL
     private static String ADD_DEVISE_TASKS = "INSERT INTO `device_tasks` (`device_id`, `task_id`) values (?,?)";
+    // language=SQL
+    private static String UPDATE_PERFORMANCE_RATE = "UPDATE `devices` SET `performance_rate`=? WHERE `id`=?";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     public void updatePerformance(String id, float power) {
-
+        jdbcTemplate.update(UPDATE_PERFORMANCE_RATE, power, id);
     }
 
     public void addNewDevice(String id, String password) {
@@ -48,7 +52,11 @@ public class DeviceDao {
                         Device device = new Device(id);
                         String rate = rs.getString("performance_rate");
                         if (rate != null) {
-                            device.setPerformanceRate(new Float(rate));
+                            device.setPerformanceRate(Float.valueOf(rate));
+                        }
+                        String tasks = rs.getString("tasks");
+                        if (tasks != null) {
+                            device.setAvaliableTasks(new HashSet<>(Arrays.asList(tasks.split(", "))));
                         }
                         return device;
                     }
@@ -58,11 +66,10 @@ public class DeviceDao {
     }
 
     public DeviceDetails getDeviceDetails(String id) {
-        return jdbcTemplate.query(SELECT_DEVISE,
+        return jdbcTemplate.query(SELECT_DEVISES_DETAILS,
                 rs -> {
                     if (rs.next()) {
-                        DeviceDetails device = new DeviceDetails(id, rs.getString("password"));
-                        return device;
+                        return new DeviceDetails(id, rs.getString("password"));
                     }
                     return null;
                 },

@@ -22,6 +22,8 @@ namespace DistributionWorker
     /// </summary>
     public partial class MainWindow : Window
     {
+        private Settings settings;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -29,11 +31,18 @@ namespace DistributionWorker
 
         private void Window_Initialized(object sender, EventArgs e)
         {
-            UdpClient client = new UdpClient("localhost", 5555);
-            string message = "Hello world!";
-            byte[] data = Encoding.UTF8.GetBytes(message);
-            int numberOfSentBytes = client.Send(data, data.Length);
-            client.Close();
+
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var taskWindow = new TasksWindow(settings);
+            taskWindow.Show();
+        }
+
+        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

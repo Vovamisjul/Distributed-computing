@@ -11,47 +11,31 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Component
-class DisconnectDetector implements DisposableBean, Runnable {
+class DisconnectDetector {
 
     private static Logger LOG = LogManager.getLogger(JWTDeviceAuthFilter.class);
 
-    @Value("${device.maxTimeToWait}")
-    private long maxTimeToWait;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    @Value("${device.maxTimeToDisconnect}")
+    private long maxTimeToDisconnect;
     @Autowired
     private DeviceController deviceController;
     @Autowired
     private TaskControllerRepository taskControllerRepository;
 
-    private Thread thread;
-    private volatile boolean running = true;
-
     @PostConstruct
     public void init() {
-        thread = new Thread(this);
-        thread.setDaemon(true);
-        thread.start();
-    }
-
-    @Override
-    public void run() {
-        while (running) {
+        scheduler.scheduleAtFixedRate(() -> {
             for (Device device : deviceController.getDisconnectedDevices()) {
-                taskControllerRepository.getTaskController(device.getCurrentTaskId()).onDeviceLost(device.getId());
+                taskControllerRepository.getController(device.getCurrentTaskCopyId()).onDeviceLost(device.getId());
             }
-            try {
-                Thread.sleep(maxTimeToWait);
-            } catch (InterruptedException e) {
-                LOG.error("Stopping disconnectDetector", e);
-                running = false;
-            }
-        }
-    }
-
-    @Override
-    public void destroy() {
-        running = false;
+        }, maxTimeToDisconnect, maxTimeToDisconnect, TimeUnit.MILLISECONDS);
     }
 
 }

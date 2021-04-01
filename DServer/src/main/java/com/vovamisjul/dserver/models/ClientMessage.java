@@ -9,12 +9,12 @@ import java.util.Map;
  */
 public class ClientMessage {
     private String type;
-    private String taskId;
+    private String taskCopyId;
     private Map<String, String> data =  new HashMap<>();
 
-    public ClientMessage(String type, String taskId) {
+    public ClientMessage(String type, String taskCopyId) {
         this.type = type;
-        this.taskId = taskId;
+        this.taskCopyId = taskCopyId;
     }
 
     public String getType() {
@@ -25,12 +25,12 @@ public class ClientMessage {
         this.type = type;
     }
 
-    public String getTaskId() {
-        return taskId;
+    public String getTaskCopyId() {
+        return taskCopyId;
     }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
+    public void setTaskCopyId(String taskCopyId) {
+        this.taskCopyId = taskCopyId;
     }
 
     public void addData(String key, String value) {
@@ -39,5 +39,9 @@ public class ClientMessage {
 
     public String getData(String key) {
         return data.get(key);
+    }
+
+    public Map<String, String> getData() {
+        return data;
     }
 }

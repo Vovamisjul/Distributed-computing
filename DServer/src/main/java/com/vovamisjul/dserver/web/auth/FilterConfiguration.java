@@ -14,10 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class FilterConfiguration {
 
     @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
-    @Autowired
     private JWTDeviceAuthFilter jwtDeviceAuthFilter;
     @Autowired
     private JWTTaskAuthFilter jwtTaskAuthFilter;
@@ -29,7 +25,6 @@ public class FilterConfiguration {
 
         registrationBean.setFilter(jwtDeviceAuthFilter);
         registrationBean.addUrlPatterns("/settings/*", "/messages");
-        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
 
         return registrationBean;
     }
@@ -41,7 +36,6 @@ public class FilterConfiguration {
 
         registrationBean.setFilter(jwtTaskAuthFilter);
         registrationBean.addUrlPatterns("/tasks/*");
-        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
 
 
         return registrationBean;
