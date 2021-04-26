@@ -33,7 +33,10 @@ class DisconnectDetector {
     public void init() {
         scheduler.scheduleAtFixedRate(() -> {
             for (Device device : deviceController.getDisconnectedDevices()) {
-                taskControllerRepository.getController(device.getCurrentTaskCopyId()).onDeviceLost(device.getId());
+                AbstractTaskController controller = taskControllerRepository.getController(device.getCurrentTaskCopyId());
+                if (controller != null) {
+                    controller.onDeviceLost(device.getId());
+                }
             }
         }, maxTimeToDisconnect, maxTimeToDisconnect, TimeUnit.MILLISECONDS);
     }

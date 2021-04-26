@@ -2,8 +2,12 @@ package com.vovamisjul.dserver.dao;
 
 import com.vovamisjul.dserver.models.Device;
 import com.vovamisjul.dserver.models.DeviceDetails;
+import com.vovamisjul.dserver.web.MessagesController;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,18 +24,23 @@ import java.util.List;
 @Component
 public class DeviceDao {
 
+    private static final Logger LOG = LogManager.getLogger(DeviceDao.class);
     // language=SQL
-    private static String INSERT_DEVISE = "INSERT FROM `devices` (`id`, `password`) VALUE (?,?)";
+    private static final String INSERT_DEVISE = "INSERT INTO `devices` (`id`, `password`, `refresh_token`) VALUE (?,?,?)";
     // language=SQL
-    private static String SELECT_DEVISE = "SELECT `devices`.`id`, `performance_rate`, GROUP_CONCAT(DISTINCT `device_tasks`.`task_id` SEPARATOR ', ') AS `tasks` FROM `devices` LEFT JOIN `device_tasks` ON `devices`.`id` = `device_tasks`.`device_id` WHERE `devices`.`id`=?";
+    private static final String SELECT_DEVISE = "SELECT `devices`.`id`, `performance_rate`, GROUP_CONCAT(DISTINCT `device_tasks`.`task_id` SEPARATOR ', ') AS `tasks` FROM `devices` LEFT JOIN `device_tasks` ON `devices`.`id` = `device_tasks`.`device_id` WHERE `devices`.`id`=?";
     // language=SQL
-    private static String SELECT_DEVISES_DETAILS = "SELECT `id`, `password` FROM `devices` WHERE `id`=?";
+    private static final String SELECT_DEVISES_DETAILS = "SELECT `id`, `password` FROM `devices` WHERE `id`=?";
     // language=SQL
-    private static String CLEAR_DEVICE_TASKS = "DELETE FROM `device_tasks` WHERE `device_id`=?";
+    private static final String CLEAR_DEVICE_TASKS = "DELETE FROM `device_tasks` WHERE `device_id`=?";
     // language=SQL
-    private static String ADD_DEVISE_TASKS = "INSERT INTO `device_tasks` (`device_id`, `task_id`) values (?,?)";
+    private static final String ADD_DEVISE_TASKS = "INSERT INTO `device_tasks` (`device_id`, `task_id`) VALUES (?,?)";
     // language=SQL
-    private static String UPDATE_PERFORMANCE_RATE = "UPDATE `devices` SET `performance_rate`=? WHERE `id`=?";
+    private static final String UPDATE_PERFORMANCE_RATE = "UPDATE `devices` SET `performance_rate`=? WHERE `id`=?";
+    // language=SQL
+    private static final String SELECT_TOKEN = "SELECT `refresh_token` FROM `devices` WHERE `id`=?";
+    // language=SQL
+    private static final String UPDATE_TOKEN = "UPDATE `devices` SET `refresh_token`=? WHERE `id`=?";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -40,8 +49,8 @@ public class DeviceDao {
         jdbcTemplate.update(UPDATE_PERFORMANCE_RATE, power, id);
     }
 
-    public void addNewDevice(String id, String password) {
-        jdbcTemplate.update(INSERT_DEVISE, id, password);
+    public void addNewDevice(String id, String password, String refreshToken) {
+        jdbcTemplate.update(INSERT_DEVISE, id, password, refreshToken);
     }
 
     @Nullable
@@ -50,10 +59,6 @@ public class DeviceDao {
                 rs -> {
                     if (rs.next()) {
                         Device device = new Device(id);
-                        String rate = rs.getString("performance_rate");
-                        if (rate != null) {
-                            device.setPerformanceRate(Float.valueOf(rate));
-                        }
                         String tasks = rs.getString("tasks");
                         if (tasks != null) {
                             device.setAvaliableTasks(new HashSet<>(Arrays.asList(tasks.split(", "))));
@@ -83,5 +88,35 @@ public class DeviceDao {
             values.add(new Object[]{deviceId, task});
         }
         jdbcTemplate.batchUpdate(ADD_DEVISE_TASKS, values);
+    }
+
+    public void addPossibleTask(String deviceId, String taskId) {
+        try {
+            jdbcTemplate.update(ADD_DEVISE_TASKS, deviceId, taskId);
+        } catch (DuplicateKeyException e) {
+            LOG.warn("Adding possible task again: {} for {}", taskId, deviceId);
+        }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public boolean tokenMatches(String deviceId, String token) {
+        return jdbcTemplate.query(
+                SELECT_TOKEN,
+                rs -> {
+                    if (rs.next()) {
+                        return token.equals(rs.getString("password"));
+                    }
+                    return false;
+                },
+                deviceId
+        );
+    }
+
+    public void updateToken(String deviceId, String token) {
+        jdbcTemplate.update(
+                UPDATE_TOKEN,
+                token,
+                deviceId
+        );
     }
 }

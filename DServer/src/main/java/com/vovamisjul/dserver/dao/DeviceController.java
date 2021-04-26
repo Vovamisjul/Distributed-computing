@@ -50,11 +50,4 @@ public class DeviceController implements DeviceRepository {
         disconnected.forEach(device -> device.setDisconnected(true));
         return disconnected;
     }
-
-    public void updatePerformanceRate(String deviceId, float rate) {
-        devices.computeIfPresent(deviceId, (id, device) -> {
-            device.setPerformanceRate(rate);
-            return device;
-        });
-    }
 }

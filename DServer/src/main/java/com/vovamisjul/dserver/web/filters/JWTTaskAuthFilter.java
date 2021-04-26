@@ -1,7 +1,6 @@
 package com.vovamisjul.dserver.web.filters;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.vovamisjul.dserver.dao.DeviceDetailsService;
 import com.vovamisjul.dserver.web.auth.JwtProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,7 +45,7 @@ public class JWTTaskAuthFilter extends HttpFilter {
         if (token != null) {
             // parse the token.
             try {
-                String user = jwtProvider.getLoginFromUserToken(token.replace("Bearer ", ""));
+                String user = jwtProvider.getUserIdFromUserToken(token.replace("Bearer ", ""));
                 if (user != null) {
                     return new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
                 }

@@ -1,33 +1,22 @@
 package com.vovamisjul.dserver.web.auth;
 
-import com.auth0.jwt.JWT;
-import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.dao.DeviceDao;
 import com.vovamisjul.dserver.dao.UserDao;
-import com.vovamisjul.dserver.models.Device;
 import com.vovamisjul.dserver.models.DeviceDetails;
 import com.vovamisjul.dserver.models.UserDetails;
+import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import java.util.Date;
 import java.util.UUID;
 
-import static com.auth0.jwt.algorithms.Algorithm.HMAC512;
-import static java.lang.Long.parseLong;
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 public class AuthController {
@@ -47,8 +36,15 @@ public class AuthController {
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ResponseEntity<Response> register(@Valid @RequestBody Registration registration) {
         String id = UUID.randomUUID().toString();
-        deviceDao.addNewDevice(id, bCryptPasswordEncoder.encode(registration.password));
-        return new ResponseEntity<>(new Response(id, jwtProvider.generateToken(id)), CREATED);
+        String refreshToken = jwtProvider.generateRefreshToken(id);
+        deviceDao.addNewDevice(id, bCryptPasswordEncoder.encode(registration.password), refreshToken);
+        return new ResponseEntity<>(
+                new Response(
+                        id,
+                        jwtProvider.generateAccessToken(id),
+                        refreshToken
+                ),
+                CREATED);
     }
 
     @Validated
@@ -61,9 +57,26 @@ public class AuthController {
     public ResponseEntity<Response> login(@Valid @RequestBody Authentication authentication) {
         DeviceDetails device = deviceDao.getDeviceDetails(authentication.id);
         if (device != null && bCryptPasswordEncoder.matches(authentication.password, device.getPassword())) {
-            return new ResponseEntity<>(new Response(authentication.id, jwtProvider.generateToken(authentication.id)), CREATED);
+            return new ResponseEntity<>(
+                    new Response(
+                            jwtProvider.generateAccessToken(authentication.id),
+                            jwtProvider.generateAndUpdateRefreshToken(authentication.id)
+                    ), CREATED);
         }
         return new ResponseEntity<>(UNAUTHORIZED);
+    }
+
+    @RequestMapping(value = "/refreshtoken", method = RequestMethod.POST)
+    public ResponseEntity<Response> refreshToken(@Valid @RequestBody Refresh refresh) {
+        Pair<String, String> tokens = jwtProvider.refreshTokens(refresh.refreshToken);
+        if (tokens == null) {
+            return new ResponseEntity<>(UNAUTHORIZED);
+        }
+        return new ResponseEntity<>(
+                new Response(
+                        tokens.getValue0(),
+                        tokens.getValue1()
+                ), CREATED);
     }
 
     @Validated
@@ -74,13 +87,33 @@ public class AuthController {
         public String password;
     }
 
-    @RequestMapping(value = "/userlogin", method = RequestMethod.POST)
+    @RequestMapping(value = "/user/login", method = RequestMethod.POST)
     public ResponseEntity<Response> loginUser(@Valid @RequestBody UserAuthentication authentication) {
         UserDetails user = userDao.getUserByUsername(authentication.username);
         if (user != null && bCryptPasswordEncoder.matches(authentication.password, user.getPassword())) {
-            return new ResponseEntity<>(new Response(Integer.toString(user.getId()), jwtProvider.generateUserToken(authentication.username)), CREATED);
+            String refresh = jwtProvider.generateRefreshToken(authentication.username);
+            userDao.updateToken(authentication.username, refresh);
+            return new ResponseEntity<>(
+                    new Response(
+                            Integer.toString(user.getId()),
+                            jwtProvider.generateUserToken(authentication.username),
+                            refresh
+                    ), CREATED);
         }
         return new ResponseEntity<>(UNAUTHORIZED);
+    }
+
+    @RequestMapping(value = "/user/refreshtoken", method = RequestMethod.POST)
+    public ResponseEntity<Response> refreshUserToken(@Valid @RequestBody Refresh refresh) {
+        Pair<String, String> tokens = jwtProvider.refreshUserTokens(refresh.refreshToken);
+        if (tokens == null) {
+            return new ResponseEntity<>(UNAUTHORIZED);
+        }
+        return new ResponseEntity<>(
+                new Response(
+                        tokens.getValue0(),
+                        tokens.getValue1()
+                ), CREATED);
     }
 
     @Validated
@@ -92,14 +125,26 @@ public class AuthController {
     }
 
 
-
     private static class Response {
         public String id;
-        public String token;
+        public String accessToken;
+        public String refreshToken;
 
-        public Response(String id, String token) {
-            this.id = id;
-            this.token = token;
+        public Response(String accessToken, String refreshToken) {
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
         }
+
+        public Response(String id, String accessToken, String refreshToken) {
+            this.id = id;
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
+        }
+    }
+
+    @Validated
+    private static class Refresh {
+        @NotNull
+        public String refreshToken;
     }
 }

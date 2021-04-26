@@ -1,0 +1,32 @@
+﻿<Window x:Class="DistributionWorker.TasksView.TasksWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:ie="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DistributionWorker.TasksView"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com"
+        mc:Ignorable="d"
+        Title="All tasks" Height="443.092" Width="720.323" Loaded="Window_Loaded" ResizeMode="NoResize">
+    <Grid>
+        <Image Name="loadingImg" gif:ImageBehavior.AnimatedSource="../images/loading.gif" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Visible" Height="60"/>
+        <Button Command="{Binding DownloadCommand}" Content="Download" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Width="103" Height="28" IsEnabled="{Binding CanDownload}"/>
+        <ListBox Name="tasksLst" ItemsSource="{Binding Tasks}" SelectedItem="{Binding Selected}" Margin="0,0,0,50" Visibility="Hidden" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ie:Interaction.Triggers>
+                <ie:EventTrigger EventName="SelectionChanged">
+                    <ie:InvokeCommandAction Command="{Binding SelectCommand}"/>
+                </ie:EventTrigger>
+            </ie:Interaction.Triggers>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <DockPanel Margin="5">
+                        <TextBlock DockPanel.Dock="Bottom" TextWrapping="Wrap" Text="{Binding Description}" />
+                        <TextBlock DockPanel.Dock="Left" FontSize="18" Text="{Binding Name}" />
+                        <TextBlock TextAlignment="Right" DockPanel.Dock="Right" Text="{Binding Id}" />
+                    </DockPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+    </Grid>
+</Window>

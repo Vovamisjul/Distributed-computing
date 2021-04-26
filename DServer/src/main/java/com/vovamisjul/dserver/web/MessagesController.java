@@ -64,10 +64,6 @@ public class MessagesController {
                 Objects.requireNonNull(device, "Should be not null after auth");
             }
             device.setLastTimeActive(System.currentTimeMillis());
-            if (device.getPerformanceRate() == null) {
-                result.setResult(new ResponseEntity<>(createError(Responses.NULL_PERFORMANCE_RATE), HttpStatus.FORBIDDEN));
-                return;
-            }
             if (clientMessage != null) {
                 preprocessClientMessage(device, clientMessage);
                 AbstractTaskController controller = taskControllerRepository.getController(clientMessage.getTaskCopyId());

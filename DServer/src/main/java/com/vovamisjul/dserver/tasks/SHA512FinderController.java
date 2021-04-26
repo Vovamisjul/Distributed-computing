@@ -15,8 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 
-import static com.vovamisjul.dserver.tasks.MessageTypes.ENDED_TASK;
-import static com.vovamisjul.dserver.tasks.MessageTypes.START;
+import static com.vovamisjul.dserver.tasks.MessageTypes.*;
 import static java.lang.Integer.parseInt;
 
 /**
@@ -30,22 +29,26 @@ import static java.lang.Integer.parseInt;
  */
 public class SHA512FinderController extends AbstractTaskController {
 
-    private static int START_CHAR = 33;
-    private static int END_CHAR = 126;
-    private static BigInteger CHARS_BASE = BigInteger.valueOf(END_CHAR - START_CHAR + 1);
+    private static final int START_CHAR = 33;
+    private static final int END_CHAR = 126;
+    private static final BigInteger CHARS_BASE = BigInteger.valueOf(END_CHAR - START_CHAR + 1);
 
     private String requiredHash;
     private int maxStringLength;
     private volatile BigInteger lastHashed = BigInteger.ZERO;
-    private BigInteger defaultValue = new BigInteger(new byte[]{(byte) 1, 0, 0, 0});
+    private final BigInteger defaultValue = new BigInteger(new byte[]{(byte) 1, 0, 0, 0});
     private List<Device> devices = new ArrayList<>();
-    private Map<String, Pair<BigInteger, BigInteger>> lastDevicesJob = new HashMap<>(); // value - vair of start and end string to hash
-    private List<String> answers = new ArrayList<>();
-    private Queue<Device> lostDevices = new LinkedList<>();
+    private final Map<String, Pair<BigInteger, BigInteger>> lastDevicesJob = new HashMap<>(); // value - vair of start and end string to hash
+    private final List<String> answers = new ArrayList<>();
+    private final Queue<Device> lostDevices = new LinkedList<>();
     private volatile boolean end = false;
 
     SHA512FinderController(String taskId) {
         super(taskId);
+    }
+
+    SHA512FinderController(String taskId, String copyId) {
+        super(taskId, copyId);
     }
 
     @Override
@@ -54,7 +57,7 @@ public class SHA512FinderController extends AbstractTaskController {
         devices = new ArrayList<>(freeDevices);
         synchronized (this) {
             for (Device device : devices) {
-                device.addMessage(creaneNextClientMessage(device.getId(), device.getPerformanceRate()));
+                device.addMessage(creaneNextClientMessage(device.getId()));
             }
         }
     }
@@ -73,10 +76,12 @@ public class SHA512FinderController extends AbstractTaskController {
                 break;
             case ENDED_TASK:
                 if (message.getData("found").equals("true")) {
-                    answers.add(message.getData("answer"));
+                    for (int i = 0; i < Integer.parseInt(message.getData("answerCount")); i++) {
+                        answers.add(message.getData("answer" + i));
+                    }
                 }
                 synchronized (this) {
-                    device.addMessage(creaneNextClientMessage(deviceId, device.getPerformanceRate()));
+                    device.addMessage(creaneNextClientMessage(deviceId));
                 }
                 break;
         }
@@ -85,7 +90,7 @@ public class SHA512FinderController extends AbstractTaskController {
     private synchronized void addNewDevice(String deviceId) {
         Device newDevice = repository.getDevice(deviceId);
         devices.add(newDevice);
-        newDevice.addMessage(creaneNextClientMessage(deviceId, newDevice.getPerformanceRate()));
+        newDevice.addMessage(creaneNextClientMessage(deviceId));
     }
 
     @Override
@@ -96,7 +101,12 @@ public class SHA512FinderController extends AbstractTaskController {
 
     @Override
     public String getParamsAsString() {
-        return Arrays.toString(new Object[]{requiredHash, maxStringLength});
+        return String.join(" ", Arrays.asList(requiredHash, Integer.toString(maxStringLength)));
+    }
+
+    @Override
+    public void setParamsFromString(String params) {
+        setParams(params.split(" "));
     }
 
     @Override
@@ -117,7 +127,7 @@ public class SHA512FinderController extends AbstractTaskController {
                             findFirst();
             if (entrustedDeviceJob.isPresent()) {
                 String entrustedDeviceId = entrustedDeviceJob.get().getKey();
-                repository.getDevice(entrustedDeviceId).addMessage(creaneNextClientMessage(entrustedDeviceId, repository.getDevice(entrustedDeviceId).getPerformanceRate()));
+                repository.getDevice(entrustedDeviceId).addMessage(creaneNextClientMessage(entrustedDeviceId));
             }
     }
 
@@ -125,8 +135,8 @@ public class SHA512FinderController extends AbstractTaskController {
      * Attention!!! This method is not synchronized (due to optimization)
      * and it NEED to be synchronized in caller method.
      */
-    private ClientMessage creaneNextClientMessage(String deviceId, float power) {
-        ClientMessage message = new ClientMessage("start", getCopyId());
+    private ClientMessage creaneNextClientMessage(String deviceId) {
+        ClientMessage message = new ClientMessage(START, getCopyId());
         message.addData("required", requiredHash);
         Device lostDevice = lostDevices.poll();
         if (lostDevice != null) {
@@ -142,7 +152,7 @@ public class SHA512FinderController extends AbstractTaskController {
                 setResult(answers.toString());
             }
             message.addData("start", startStr);
-            BigInteger ending = lastHashed.add(multiplyBigIntByFloat(defaultValue, power));
+            BigInteger ending = lastHashed.add(defaultValue);
             lastDevicesJob.put(deviceId, new Pair<>(lastHashed, ending));
             message.addData("end", bigIntToString(ending));
             lastHashed = ending;
@@ -150,14 +160,9 @@ public class SHA512FinderController extends AbstractTaskController {
         return message;
     }
 
-    private BigInteger multiplyBigIntByFloat(BigInteger value, float factor) {
-        long of1000 = Math.round(Math.ceil(factor * 1000));
-        return value.multiply(BigInteger.valueOf(of1000)).divide(BigInteger.valueOf(1000L));
-    }
-
     private void sendStopMessages() {
         for (Device device : devices) {
-            device.addMessage(new ClientMessage("stop", getCopyId()));
+            device.addMessage(new ClientMessage(STOP, getCopyId()));
         }
     }
 

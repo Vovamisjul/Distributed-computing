@@ -1,23 +1,21 @@
 package com.vovamisjul.dserver.tasks;
 
-import com.vovamisjul.dserver.web.filters.JWTDeviceAuthFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Component
 public class TaskControllerRepository {
 
-    private static Logger LOG = LogManager.getLogger(TaskControllerRepository.class);
+    private static final Logger LOG = LogManager.getLogger(TaskControllerRepository.class);
 
-    private Map<String, TaskInfo> taskInfos = new HashMap<>();
+    private final Map<String, TaskInfo> taskInfos = new HashMap<>();
 
-    private Map<String, AbstractTaskController> runningControllers = new HashMap<>();
+    private final Map<String, AbstractTaskController> runningControllers = new HashMap<>();
 
     @PostConstruct
     public void init() {
@@ -37,6 +35,10 @@ public class TaskControllerRepository {
         return taskInfos.get(taskId).createTaskController();
     }
 
+    public AbstractTaskController createTaskController(String taskId, String copyId) {
+        return taskInfos.get(taskId).createTaskController(copyId);
+    }
+
     public void addRunningController(AbstractTaskController controller) {
         runningControllers.put(controller.getCopyId(), controller);
     }
@@ -45,7 +47,19 @@ public class TaskControllerRepository {
         return runningControllers.get(copyId);
     }
 
+    public List<AbstractTaskController> getUserControllers(String userId) {
+        return runningControllers.values().stream()
+                .filter(controller -> controller.getAuthorId().equals(userId))
+                .collect(Collectors.toList());
+    }
+
     public boolean hasControllerByTaskId(String taskId) {
         return runningControllers.values().stream().anyMatch(controller -> controller.getTaskId().equals(taskId));
+    }
+
+    public List<RunningTaskInfo> getRunningTasks() {
+        return runningControllers.values().stream()
+                .map(controller -> new RunningTaskInfo(getTaskInfo(controller.getTaskId()), controller.getCopyId(), controller.getAuthorId()))
+                .collect(Collectors.toList());
     }
 }

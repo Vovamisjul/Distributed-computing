@@ -10,7 +10,11 @@ import org.springframework.stereotype.Component;
 public class UserDao {
 
     // language=SQL
-    private static String SELECT_USER = "SELECT * FROM `users` WHERE `username`=?";
+    private static final String SELECT_USER = "SELECT * FROM `users` WHERE `username`=?";
+    // language=SQL
+    private static final String SELECT_TOKEN = "SELECT `refresh_token` FROM `users` WHERE `id`=?";
+    // language=SQL
+    private static final String UPDATE_TOKEN = "UPDATE `users` SET `refresh_token`=? WHERE `id`=?";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -19,11 +23,32 @@ public class UserDao {
         return jdbcTemplate.query(SELECT_USER,
                 rs -> {
                     if (rs.next()) {
-                        UserDetails user = new UserDetails(rs.getInt("id"), username, rs.getString("password"));
-                        return user;
+                        return new UserDetails(rs.getInt("id"), username, rs.getString("password"));
                     }
                     return null;
                 },
                 username);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public boolean tokenMatches(String userId, String token) {
+        return jdbcTemplate.query(
+                SELECT_TOKEN,
+                rs -> {
+                    if (rs.next()) {
+                        return token.equals(rs.getString("password"));
+                    }
+                    return false;
+                },
+                userId
+        );
+    }
+
+    public void updateToken(String userId, String token) {
+        jdbcTemplate.update(
+                UPDATE_TOKEN,
+                token,
+                userId
+        );
     }
 }

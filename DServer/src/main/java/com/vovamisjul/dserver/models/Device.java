@@ -13,7 +13,7 @@ public class Device {
     private String id;
     private volatile Float performanceRate;
     private volatile JobStatus jobStatus = UNACTIVE;
-    private volatile List<ClientMessage> unsentMessages = new LinkedList<>();
+    private final List<ClientMessage> unsentMessages = new LinkedList<>();
     private Set<String> avaliableTasks = new HashSet<>();
     private volatile String currentTaskCopyId;
     private volatile long lastTimeActive;

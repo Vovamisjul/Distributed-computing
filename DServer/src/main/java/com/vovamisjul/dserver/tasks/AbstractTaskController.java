@@ -6,7 +6,6 @@ import com.vovamisjul.dserver.models.Device;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public abstract class AbstractTaskController {
 
@@ -18,13 +17,19 @@ public abstract class AbstractTaskController {
 
     private BiConsumer<AbstractTaskController, String> finishListener; // copyId, result
 
-    private String copyId;
+    private final String copyId;
 
-    private String taskId;
+    private final String taskId;
+
+    private String authorId;
 
     AbstractTaskController(String taskId) {
+        this(taskId, UUID.randomUUID().toString());
+    }
+
+    AbstractTaskController(String taskId, String copyId) {
         this.taskId = taskId;
-        copyId = UUID.randomUUID().toString();
+        this.copyId = copyId;
     }
 
     public void setDeviceRepository(DeviceRepository repository) {
@@ -38,6 +43,8 @@ public abstract class AbstractTaskController {
     public abstract void setParams(String[] params);
 
     public abstract String getParamsAsString();
+
+    public abstract void setParamsFromString(String params);
 
     public abstract void processClientMessage(String deviceId, ClientMessage message);
 
@@ -65,5 +72,13 @@ public abstract class AbstractTaskController {
 
     public String getTaskId() {
         return taskId;
+    }
+
+    public String getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(String authorId) {
+        this.authorId = authorId;
     }
 }

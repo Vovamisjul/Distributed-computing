@@ -41,6 +41,12 @@ public class ClientMessage {
         return data.get(key);
     }
 
+    public void setData(Map<String, String> data) {
+        if (data != null) {
+            this.data = data;
+        }
+    }
+
     public Map<String, String> getData() {
         return data;
     }

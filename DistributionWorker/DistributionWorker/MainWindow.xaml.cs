@@ -1,4 +1,8 @@
-﻿using System;
+﻿using DistributionWorker.DownloadedTasksView;
+using DistributionWorker.Exceptions;
+using DistributionWorker.Tasks;
+using DistributionWorker.TasksView;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -22,8 +26,6 @@ namespace DistributionWorker
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Settings settings;
-
         public MainWindow()
         {
             InitializeComponent();
@@ -31,18 +33,37 @@ namespace DistributionWorker
 
         private void Window_Initialized(object sender, EventArgs e)
         {
-
+            TaskManager.LoadTasks();
         }
 
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        private void AllTasksItem_Click(object sender, RoutedEventArgs e)
         {
-            var taskWindow = new TasksWindow(settings);
+            var taskWindow = new TasksWindow();
             taskWindow.Show();
         }
 
-        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        private void MainWdw_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                AuthController.Initialize();
+            }
+            catch (UnregisteredException ex)
+            {
+                var registerWindow = new RegisterWindow();
+                registerWindow.ShowDialog();
+            }
+        }
 
+        private void StartBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var downloadedTaskWindow = new DownloadedTasksWindow();
+            downloadedTaskWindow.ShowDialog();
+            if (downloadedTaskWindow.Task != null)
+            {
+                TaskManager.SetCurrentTask(downloadedTaskWindow.Task.Id);
+                TaskManager.CurrentTask.StartProcessing(downloadedTaskWindow.Task.CopyId);
+            }
         }
     }
 }

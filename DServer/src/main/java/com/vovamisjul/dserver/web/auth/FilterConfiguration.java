@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 public class FilterConfiguration {
@@ -35,7 +35,7 @@ public class FilterConfiguration {
                 = new FilterRegistrationBean<>();
 
         registrationBean.setFilter(jwtTaskAuthFilter);
-        registrationBean.addUrlPatterns("/tasks/*");
+        registrationBean.addUrlPatterns("/queue/*");
 
 
         return registrationBean;
