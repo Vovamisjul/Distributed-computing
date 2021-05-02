@@ -1,10 +1,9 @@
 package com.vovamisjul.dserver.web;
 
-import com.vovamisjul.dserver.dao.DeviceController;
-import com.vovamisjul.dserver.dao.DeviceDao;
-import com.vovamisjul.dserver.tasks.RunningTaskInfo;
+import com.vovamisjul.dserver.dao.TaskInfoDao;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import com.vovamisjul.dserver.tasks.TaskInfo;
+import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController()
 @RequestMapping("/tasks")
@@ -29,6 +29,8 @@ public class TaskManageController {
 
     @Autowired
     private TaskControllerRepository taskControllerRepository;
+    @Autowired
+    private TaskInfoDao taskInfoDao;
 
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
@@ -38,7 +40,9 @@ public class TaskManageController {
 
     @RequestMapping(value = "/running", method = RequestMethod.GET)
     public List<RunningTaskInfo> getRunningTasks() {
-        return taskControllerRepository.getRunningTasks();
+        return taskInfoDao.getTaskInfos(taskControllerRepository.getRunningCopyIds()).stream()
+                .map(RunningTaskInfo::new)
+                .collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/{name}", method = RequestMethod.GET)

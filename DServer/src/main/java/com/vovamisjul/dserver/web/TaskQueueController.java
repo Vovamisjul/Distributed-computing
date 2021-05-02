@@ -1,9 +1,13 @@
 package com.vovamisjul.dserver.web;
 
+import com.vovamisjul.dserver.dao.TaskInfoDao;
 import com.vovamisjul.dserver.dao.TaskResultsDao;
-import com.vovamisjul.dserver.tasks.RunningTaskInfo;
+import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import com.vovamisjul.dserver.tasks.TaskStatus;
 import com.vovamisjul.dserver.dao.TasksQueueDao;
+import com.vovamisjul.dserver.tasks.objects.FinishedTaskInfo;
+import com.vovamisjul.dserver.tasks.objects.QueuedTaskInfo;
+import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,14 +31,17 @@ import java.util.stream.Collectors;
 public class TaskQueueController {
 
     @Autowired
-    TasksQueueDao tasksQueueDao;
-
+    private TasksQueueDao tasksQueueDao;
     @Autowired
     private TaskResultsDao taskResultsDao;
+    @Autowired
+    private TaskInfoDao taskInfoDao;
+    @Autowired
+    private TaskControllerRepository taskControllerRepository;
 
     @RequestMapping(path = "/add", method = RequestMethod.PUT)
     public ResponseEntity<CopyId> addTask(@Valid @RequestBody(required = true) NewTask newTask, HttpServletRequest request) {
-        return new ResponseEntity<>(new CopyId(tasksQueueDao.addNewTask(newTask.taskId, newTask.params, request.getRemoteUser())), HttpStatus.OK);
+        return new ResponseEntity<>(new CopyId(tasksQueueDao.addNewTask(newTask.taskId, newTask.params, request.getRemoteUser(), newTask.comment)), HttpStatus.OK);
     }
 
     @Validated
@@ -43,6 +50,7 @@ public class TaskQueueController {
         public String taskId;
         @NotNull
         public String[] params;
+        public String comment;
     }
 
     private static class CopyId {
@@ -70,33 +78,20 @@ public class TaskQueueController {
     }
 
     @RequestMapping(path = "/queued", method = RequestMethod.GET)
-    public ResponseEntity<List<RunningTaskInfo>> getQueuedTasks(HttpServletRequest request) {
+    public ResponseEntity<List<QueuedTaskInfo>> getQueuedTasks(HttpServletRequest request) {
         return new ResponseEntity<>(tasksQueueDao.getQueuedTasks(request.getRemoteUser()), HttpStatus.OK);
     }
 
     @RequestMapping(path = "/running", method = RequestMethod.GET)
     public ResponseEntity<List<RunningTaskInfo>> getRunningTasks(HttpServletRequest request) {
-        return new ResponseEntity<>(tasksQueueDao.getRunningTasks(request.getRemoteUser()), HttpStatus.OK);
+        return new ResponseEntity<>(
+                taskInfoDao.getTaskInfos(taskControllerRepository.getRunningCopyIds(request.getRemoteUser())).stream()
+                .map(RunningTaskInfo::new)
+                .collect(Collectors.toList()), HttpStatus.OK);
     }
 
     @RequestMapping(path = "/completed", method = RequestMethod.GET)
-    public ResponseEntity<List<DetailedTaskResult>> getCompletedTasks(HttpServletRequest request) {
-        return new ResponseEntity<>(
-                taskResultsDao.getUserResults(request.getRemoteUser()).stream()
-                        .map(set -> new DetailedTaskResult(set.getValue0(), set.getValue1(), set.getValue2()))
-                        .collect(Collectors.toList()),
-                HttpStatus.OK);
-    }
-
-    private static class DetailedTaskResult {
-        public RunningTaskInfo taskInfo;
-        public String result;
-        public Date finished;
-
-        public DetailedTaskResult(RunningTaskInfo taskInfo, String result, Date finished) {
-            this.taskInfo = taskInfo;
-            this.result = result;
-            this.finished = finished;
-        }
+    public ResponseEntity<List<FinishedTaskInfo>> getCompletedTasks(HttpServletRequest request) {
+        return new ResponseEntity<>(taskResultsDao.getUserResults(request.getRemoteUser()), HttpStatus.OK);
     }
 }

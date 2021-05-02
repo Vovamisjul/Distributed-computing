@@ -36,7 +36,7 @@ public class UserDao {
                 SELECT_TOKEN,
                 rs -> {
                     if (rs.next()) {
-                        return token.equals(rs.getString("password"));
+                        return token.equals(rs.getString("refresh_token"));
                     }
                     return false;
                 },

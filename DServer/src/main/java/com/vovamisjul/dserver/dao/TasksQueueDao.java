@@ -1,9 +1,11 @@
 package com.vovamisjul.dserver.dao;
 
 import com.vovamisjul.dserver.tasks.AbstractTaskController;
-import com.vovamisjul.dserver.tasks.RunningTaskInfo;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import com.vovamisjul.dserver.tasks.TaskStatus;
+import com.vovamisjul.dserver.tasks.objects.FinishedTaskInfo;
+import com.vovamisjul.dserver.tasks.objects.QueuedTaskInfo;
+import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.stream.Collectors;
 
 @Component
@@ -23,21 +24,27 @@ public class TasksQueueDao {
     @Autowired
     private TaskResultsDao taskResultsDao;
     @Autowired
+    private TaskInfoDao taskInfoDao;
+    @Autowired
     private DeviceController deviceController;
     @Autowired
     private JdbcTemplate jdbcTemplate;
     // language=SQL
-    private static final String ADD_TASK = "INSERT INTO `task_queue` (copy_id, task_id, user_id) VALUE (?,?,?)";
+    private static final String ADD_TASK_TO_QUEUE = "INSERT INTO `task_queue` (task_copy_id) VALUE (?)";
     // language=SQL
-    private static final String GET_TASKS = "SELECT `task_id`, `copy_id` FROM `task_queue` WHERE user_id=?";
+    private static final String GET_TASKS = "SELECT `task_info`.*, username " +
+            "FROM `task_queue` " +
+            "         JOIN `task_info` on `task_info`.`copy_id` = `task_queue`.`task_copy_id` " +
+            "         JOIN `users` on `users`.`id` = `task_info`.`user_id` " +
+            "WHERE user_id = ?";
     // language=SQL
-    private static final String EXISTS_TASK = "SELECT EXISTS(SELECT 1 FROM `task_queue` WHERE copy_id=?)";
+    private static final String EXISTS_TASK = "SELECT EXISTS(SELECT 1 FROM `task_queue` WHERE `task_copy_id`=?)";
     // language=SQL
-    private static final String POLL_TASK = "SET @id := (SELECT min(`id`) FROM `task_queue` WHERE `task_id`=?);\n" +
-            "SELECT * FROM `task_queue` WHERE `id`=@id;\n" +
+    private static final String POLL_TASK = "SET @id := (SELECT min(`id`) FROM `task_queue` JOIN `task_info` on `task_info`.`copy_id` = `task_queue`.`task_copy_id` WHERE `task_id`=?);\n" +
+            "SELECT * FROM `task_queue` JOIN `task_info` on `task_info`.`copy_id` = `task_queue`.`task_copy_id` WHERE `id`=@id;\n" +
             "DELETE FROM `task_queue` WHERE `id`=@id;\n";
 
-    public String addNewTask(String taskId, String[] params, String authorId) {
+    public String addNewTask(String taskId, String[] params, String authorId, String comment) {
         AbstractTaskController controller = createAndInitController(taskId, params, authorId);
         Pair<String, String> result = taskResultsDao.getResultByParams(taskId, controller.getParamsAsString());
 
@@ -45,8 +52,9 @@ public class TasksQueueDao {
             return result.getValue0();
         }
 
+        taskInfoDao.addTaskInfo(controller.getCopyId(), controller.getTaskId(), authorId, controller.getParamsAsString(), comment);
         if (taskControllerRepository.hasControllerByTaskId(taskId)) {
-            jdbcTemplate.update(ADD_TASK, controller.getCopyId(), authorId);
+            jdbcTemplate.update(ADD_TASK_TO_QUEUE, controller.getCopyId());
         } else {
             startNewTask(controller);
         }
@@ -59,7 +67,7 @@ public class TasksQueueDao {
     }
 
     private void onTaskFinish(AbstractTaskController controller, String result) {
-        taskResultsDao.saveResult(controller.getCopyId(), controller.getParamsAsString(), controller.getTaskId(), result, controller.getAuthorId());
+        taskResultsDao.saveResult(controller.getCopyId(), result);
         AbstractTaskController newController = jdbcTemplate.query(POLL_TASK,
                 rs -> {
                     if (rs.next()) {
@@ -118,40 +126,22 @@ public class TasksQueueDao {
         return new Pair<>(TaskStatus.NOT_EXIST, null);
     }
 
-    public List<RunningTaskInfo> getQueuedTasks(String userId) {
+    public List<QueuedTaskInfo> getQueuedTasks(String userId) {
         return jdbcTemplate.query(GET_TASKS,
                 rs -> {
-                    List<RunningTaskInfo> result = new ArrayList<>();
+                    List<QueuedTaskInfo> result = new ArrayList<>();
                     while (rs.next()) {
-                        result.add(new RunningTaskInfo(
+                        result.add(new QueuedTaskInfo(
                                 taskControllerRepository.getTaskInfo(rs.getString("task_id")),
-                                rs.getString("copy_id"),
-                                userId));
+                                rs.getString("username"),
+                                rs.getString("params"),
+                                rs.getDate("created"),
+                                rs.getString("comment"))
+                        );
                     }
                     return result;
                 },
                 userId);
     }
-
-    public List<RunningTaskInfo> getRunningTasks(String userId) {
-        return taskControllerRepository.getUserControllers(userId).stream()
-                .map(controller -> new RunningTaskInfo(
-                        taskControllerRepository.getTaskInfo(controller.getTaskId()),
-                        controller.getCopyId(),
-                        userId
-                ))
-                .collect(Collectors.toList());
-    }
-
-    public List<RunningTaskInfo> getCompletedTasks(String userId) {
-        return taskControllerRepository.getUserControllers(userId).stream()
-                .map(controller -> new RunningTaskInfo(
-                        taskControllerRepository.getTaskInfo(controller.getTaskId()),
-                        controller.getCopyId(),
-                        userId
-                ))
-                .collect(Collectors.toList());
-    }
-
 
 }

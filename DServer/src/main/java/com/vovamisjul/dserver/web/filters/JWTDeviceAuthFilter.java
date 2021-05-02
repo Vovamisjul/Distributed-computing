@@ -1,7 +1,7 @@
 package com.vovamisjul.dserver.web.filters;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.vovamisjul.dserver.web.auth.JwtProvider;
+import com.vovamisjul.dserver.web.auth.JwtDeviceProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class JWTDeviceAuthFilter extends HttpFilter {
     private static Logger LOG = LogManager.getLogger(JWTDeviceAuthFilter.class);
 
     @Autowired
-    private JwtProvider jwtProvider;
+    private JwtDeviceProvider jwtDeviceProvider;
 
     @Override
     public void doFilter(HttpServletRequest request,
@@ -45,7 +45,7 @@ public class JWTDeviceAuthFilter extends HttpFilter {
         if (token != null) {
             // parse the token.
             try {
-                String user = jwtProvider.getDeviceIdFromToken(token.replace("Bearer ", ""));
+                String user = jwtDeviceProvider.getDeviceIdFromToken(token.replace("Bearer ", ""));
                 if (user != null) {
                     return new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
                 }

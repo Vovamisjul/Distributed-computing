@@ -1,8 +1,7 @@
 package com.vovamisjul.dserver.dao;
 
-import com.vovamisjul.dserver.models.Device;
-import com.vovamisjul.dserver.tasks.RunningTaskInfo;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
+import com.vovamisjul.dserver.tasks.objects.FinishedTaskInfo;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +20,21 @@ public class TaskResultsDao {
     @Autowired
     private TaskControllerRepository taskControllerRepository;
     // language=SQL
-    private static final String INSERT_RESULT = "INSERT INTO `task_results` (copy_id, result, task_id, params, user_id, finished) VALUE (?,?,?,?,?,NOW())";
+    private static final String INSERT_RESULT = "INSERT INTO `task_results` (task_copy_id, result, finished) VALUE (?,?,NOW())";
     // language=SQL
-    private static final String SELECT_RESULT_BY_PARAMS = "SELECT `copy_id`, `result` FROM `task_results` WHERE `task_id`=? AND `params`=?";
+    private static final String SELECT_RESULT_BY_PARAMS = "SELECT `copy_id`, `result` " +
+            "FROM `task_results` " +
+            "         JOIN `task_info` ON `task_info`.`copy_id` = `task_results`.`task_copy_id` " +
+            "WHERE `task_id` = ? " +
+            "  AND `params` = ?";
     // language=SQL
-    private static final String SELECT_RESULT_BY_COPY_ID = "SELECT `result` FROM `task_results` WHERE `copy_id`=?";
+    private static final String SELECT_RESULT_BY_COPY_ID = "SELECT `result` FROM `task_results` WHERE `task_copy_id`=?";
     // language=SQL
-    private static final String SELECT_RESULT_BY_AUTHOR = "SELECT * FROM `task_results` WHERE `user_id`=?";
+    private static final String SELECT_RESULT_BY_AUTHOR = "SELECT `task_info`.*, `task_results`.*, username " +
+            "FROM `task_results` " +
+            "         JOIN `task_info` ON `task_info`.`copy_id` = `task_results`.`task_copy_id` " +
+            "         JOIN `users` ON `users`.`id` = `task_info`.`user_id` " +
+            "WHERE `user_id` = 1";
 
     /**
      * @return Pair: value0 - copy_id, value1 - result
@@ -55,24 +62,25 @@ public class TaskResultsDao {
                 copyId);
     }
 
-    public void saveResult(String copyId, String params, String taskId, String result, String userId) {
-        jdbcTemplate.update(INSERT_RESULT, copyId, result, taskId, params, userId);
+    public void saveResult(String copyId, String result) {
+        jdbcTemplate.update(INSERT_RESULT, copyId, result);
     }
 
-    public List<Triplet<RunningTaskInfo, String, Date>> getUserResults(String userId) {
+    public List<FinishedTaskInfo> getUserResults(String userId) {
         return jdbcTemplate.query(
                 SELECT_RESULT_BY_AUTHOR,
                 rs -> {
-                    List<Triplet<RunningTaskInfo, String, Date>> result = new ArrayList<>();
+                    List<FinishedTaskInfo> result = new ArrayList<>();
                     while (rs.next()) {
-                        result.add(new Triplet<>(
-                                new RunningTaskInfo(
-                                        taskControllerRepository.getTaskInfo(rs.getString("task_id")),
-                                        rs.getString("copy_id"),
-                                        userId),
+                        result.add(new FinishedTaskInfo(
+                                taskControllerRepository.getTaskInfo(rs.getString("task_id")),
+                                rs.getString("username"),
+                                rs.getString("params"),
+                                rs.getDate("created"),
+                                rs.getString("comment"),
                                 rs.getString("result"),
-                                rs.getDate("finished")
-                                ));
+                                rs.getDate("finished"))
+                        );
                     }
                     return result;
                 },

@@ -31,17 +31,20 @@ public class AuthController {
     public UserDao userDao;
 
     @Autowired
-    private JwtProvider jwtProvider;
+    private JwtUserProvider jwtUserProvider;
+
+    @Autowired
+    private JwtDeviceProvider jwtDeviceProvider;
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ResponseEntity<Response> register(@Valid @RequestBody Registration registration) {
         String id = UUID.randomUUID().toString();
-        String refreshToken = jwtProvider.generateRefreshToken(id);
+        String refreshToken = jwtDeviceProvider.generateRefreshToken(id);
         deviceDao.addNewDevice(id, bCryptPasswordEncoder.encode(registration.password), refreshToken);
         return new ResponseEntity<>(
                 new Response(
                         id,
-                        jwtProvider.generateAccessToken(id),
+                        jwtDeviceProvider.generateAccessToken(id),
                         refreshToken
                 ),
                 CREATED);
@@ -59,8 +62,8 @@ public class AuthController {
         if (device != null && bCryptPasswordEncoder.matches(authentication.password, device.getPassword())) {
             return new ResponseEntity<>(
                     new Response(
-                            jwtProvider.generateAccessToken(authentication.id),
-                            jwtProvider.generateAndUpdateRefreshToken(authentication.id)
+                            jwtDeviceProvider.generateAccessToken(authentication.id),
+                            jwtDeviceProvider.generateAndUpdateRefreshToken(authentication.id)
                     ), CREATED);
         }
         return new ResponseEntity<>(UNAUTHORIZED);
@@ -68,7 +71,7 @@ public class AuthController {
 
     @RequestMapping(value = "/refreshtoken", method = RequestMethod.POST)
     public ResponseEntity<Response> refreshToken(@Valid @RequestBody Refresh refresh) {
-        Pair<String, String> tokens = jwtProvider.refreshTokens(refresh.refreshToken);
+        Pair<String, String> tokens = jwtDeviceProvider.refreshTokens(refresh.refreshToken);
         if (tokens == null) {
             return new ResponseEntity<>(UNAUTHORIZED);
         }
@@ -91,12 +94,13 @@ public class AuthController {
     public ResponseEntity<Response> loginUser(@Valid @RequestBody UserAuthentication authentication) {
         UserDetails user = userDao.getUserByUsername(authentication.username);
         if (user != null && bCryptPasswordEncoder.matches(authentication.password, user.getPassword())) {
-            String refresh = jwtProvider.generateRefreshToken(authentication.username);
-            userDao.updateToken(authentication.username, refresh);
+            String userId = String.valueOf(user.getId());
+            String refresh = jwtUserProvider.generateRefreshToken(userId);
+            userDao.updateToken(userId, refresh);
             return new ResponseEntity<>(
                     new Response(
-                            Integer.toString(user.getId()),
-                            jwtProvider.generateUserToken(authentication.username),
+                            userId,
+                            jwtUserProvider.generateAccessToken(userId),
                             refresh
                     ), CREATED);
         }
@@ -105,7 +109,7 @@ public class AuthController {
 
     @RequestMapping(value = "/user/refreshtoken", method = RequestMethod.POST)
     public ResponseEntity<Response> refreshUserToken(@Valid @RequestBody Refresh refresh) {
-        Pair<String, String> tokens = jwtProvider.refreshUserTokens(refresh.refreshToken);
+        Pair<String, String> tokens = jwtUserProvider.refreshTokens(refresh.refreshToken);
         if (tokens == null) {
             return new ResponseEntity<>(UNAUTHORIZED);
         }

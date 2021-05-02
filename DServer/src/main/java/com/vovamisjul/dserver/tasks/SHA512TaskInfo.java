@@ -15,7 +15,8 @@ public class SHA512TaskInfo extends TaskInfo {
     @Override
     public String getDescription() {
         return "Simple task for brooting many strings to find, " +
-                "which ones sha512 hash matches required one. (UTF-8 encoding)";
+                "which ones SHA512 hash matches required one. (UTF-8 encoding). " +
+                "More about SHA and hashes - https://en.wikipedia.org/wiki/SHA-2";
     }
 
     @Override

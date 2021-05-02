@@ -1,5 +1,6 @@
 package com.vovamisjul.dserver.tasks;
 
+import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -20,7 +21,9 @@ public class TaskControllerRepository {
     @PostConstruct
     public void init() {
         TaskInfo sha512info = new SHA512TaskInfo();
+        TaskInfo factorial = new FactorialPrimesTaskInfo();
         taskInfos.put(sha512info.getId(), sha512info);
+        taskInfos.put(factorial.getId(), factorial);
     }
 
     public List<TaskInfo> getTaskInfos() {
@@ -57,9 +60,16 @@ public class TaskControllerRepository {
         return runningControllers.values().stream().anyMatch(controller -> controller.getTaskId().equals(taskId));
     }
 
-    public List<RunningTaskInfo> getRunningTasks() {
+    public List<String> getRunningCopyIds() {
         return runningControllers.values().stream()
-                .map(controller -> new RunningTaskInfo(getTaskInfo(controller.getTaskId()), controller.getCopyId(), controller.getAuthorId()))
+                .map(AbstractTaskController::getCopyId)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getRunningCopyIds(String userId) {
+        return runningControllers.values().stream()
+                .filter(controller -> controller.getAuthorId().equals(userId))
+                .map(AbstractTaskController::getCopyId)
                 .collect(Collectors.toList());
     }
 }
