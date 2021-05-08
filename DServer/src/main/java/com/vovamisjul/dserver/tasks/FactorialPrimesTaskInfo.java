@@ -14,8 +14,8 @@ public class FactorialPrimesTaskInfo extends TaskInfo {
     @Override
     public String getDescription() {
         return "Finds factorial prime numbers. " +
-                "A factorial prime is a prime number that is one less or one more than a factorial " +
-                "(all factorials greater than 1 are even). p = x!±1. " +
+                "A factorial prime is a prime number that is one less or one more than a factorial (such prime p, that p = x!±1, x ∈ N) " +
+                "(all factorials greater than 1 are even). " +
                 "More - https://en.wikipedia.org/wiki/Factorial_prime";
     }
 

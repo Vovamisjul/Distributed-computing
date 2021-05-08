@@ -15,7 +15,7 @@ public abstract class AbstractTaskController {
 
     protected DeviceRepository repository;
 
-    private BiConsumer<AbstractTaskController, String> finishListener; // copyId, result
+    private BiConsumer<AbstractTaskController, String> finishListener;
 
     private final String copyId;
 

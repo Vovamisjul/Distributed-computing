@@ -69,6 +69,7 @@ public class MessagesController {
                 AbstractTaskController controller = taskControllerRepository.getController(clientMessage.getTaskCopyId());
                 if (controller != null) {
                     controller.processClientMessage(deviceId, clientMessage);
+                    deviceDao.updateRating(deviceId, device.getRating());
                 }
             }
             try {

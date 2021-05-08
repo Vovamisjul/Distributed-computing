@@ -8,8 +8,8 @@ public class FinishedTaskInfo extends CreatedTaskInfo {
     public String result;
     public Date finished;
 
-    public FinishedTaskInfo(TaskInfo taskInfo, String author, String params, Date created, String comment, String result, Date finished) {
-        super(taskInfo, author, params, created, comment);
+    public FinishedTaskInfo(TaskInfo taskInfo, String copyId, String author, String params, Date created, String comment, String result, Date finished) {
+        super(taskInfo, copyId, author, params, created, comment);
         this.result = result;
         this.finished = finished;
     }
@@ -17,6 +17,7 @@ public class FinishedTaskInfo extends CreatedTaskInfo {
     public FinishedTaskInfo(CreatedTaskInfo createdTaskInfo, String result, Date finished) {
         this(
                 createdTaskInfo.getTaskInfo(),
+                createdTaskInfo.getCopyId(),
                 createdTaskInfo.getAuthor(),
                 createdTaskInfo.getParams(),
                 createdTaskInfo.getCreated(),

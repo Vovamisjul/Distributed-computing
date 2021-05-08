@@ -11,7 +11,7 @@ import static com.vovamisjul.dserver.models.JobStatus.UNACTIVE;
 @ParametersAreNonnullByDefault
 public class Device {
     private String id;
-    private volatile Float performanceRate;
+    private volatile double rating;
     private volatile JobStatus jobStatus = UNACTIVE;
     private final List<ClientMessage> unsentMessages = new LinkedList<>();
     private Set<String> avaliableTasks = new HashSet<>();
@@ -26,9 +26,11 @@ public class Device {
         this.id = id;
     }
 
-    public synchronized void addMessage(ClientMessage message) {
-        unsentMessages.add(message);
-        this.notify();
+    public synchronized void addMessage(@Nullable ClientMessage message) {
+        if (message != null) {
+            unsentMessages.add(message);
+            this.notify();
+        }
     }
 
     public List<ClientMessage> takeMessages() {
@@ -47,6 +49,39 @@ public class Device {
         return takeMessages();
     }
 
+    public static int compareRating(Device d1, Device d2, int gapToEqual) {
+        long thisSteps = getRatingSteps(d1.rating), otherSteps = getRatingSteps(d2.rating);
+        int diff = (int) (thisSteps - otherSteps);
+        if (Math.abs(diff) > gapToEqual) {
+            return diff > 0 ? 1 : -1;
+        }
+        return 0;
+    }
+
+    public static long getRatingSteps(double rating) {
+        if (rating >= 0.5) {
+            return Math.round(- Math.log(1 - rating) / Math.log(2) - 1);
+        } else {
+            return Math.round((rating) / Math.log(2) + 1);
+        }
+    }
+
+    public synchronized void incRating() {
+        if (rating >= 0.5) {
+            rating += (1 - rating) / 2;
+        } else {
+            rating *= 2;
+        }
+    }
+
+    public synchronized void decRating() {
+        if (rating > 0.5) {
+            rating -= 1 - rating;
+        } else {
+            rating /= 2;
+        }
+    }
+
     public String getId() {
         return id;
     }
@@ -55,12 +90,12 @@ public class Device {
         this.id = id;
     }
 
-    public Float getPerformanceRate() {
-        return performanceRate;
+    public double getRating() {
+        return rating;
     }
 
-    public void setPerformanceRate(Float performanceRate) {
-        this.performanceRate = performanceRate;
+    public void setRating(double rating) {
+        this.rating = rating;
     }
 
     public JobStatus getJobStatus() {

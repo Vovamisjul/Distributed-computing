@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -30,16 +32,20 @@ public class TaskInfoDao {
     }
 
     public List<CreatedTaskInfo> getTaskInfos(List<String> copyIds) {
-        SqlParameterSource parameters = new MapSqlParameterSource("ids", copyIds);
+        if (copyIds.isEmpty()) {
+            return Collections.emptyList();
+        }
 
+        SqlParameterSource parameters = new MapSqlParameterSource("ids", copyIds);
         return namedParameterJdbcTemplate.query(
                 GET_INFOS_IN,
                 parameters,
                 (rs, rowNum) -> new CreatedTaskInfo(
                         taskControllerRepository.getTaskInfo(rs.getString("task_id")),
+                        rs.getString("copy_id"),
                         rs.getString("username"),
                         rs.getString("params"),
-                        rs.getDate("created"),
+                        rs.getTimestamp("created", Calendar.getInstance()),
                         rs.getString("comment")
                 )
         );

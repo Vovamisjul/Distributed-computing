@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class TaskResultsDao {
             "FROM `task_results` " +
             "         JOIN `task_info` ON `task_info`.`copy_id` = `task_results`.`task_copy_id` " +
             "         JOIN `users` ON `users`.`id` = `task_info`.`user_id` " +
-            "WHERE `user_id` = 1";
+            "WHERE `user_id` = ?";
 
     /**
      * @return Pair: value0 - copy_id, value1 - result
@@ -74,12 +75,13 @@ public class TaskResultsDao {
                     while (rs.next()) {
                         result.add(new FinishedTaskInfo(
                                 taskControllerRepository.getTaskInfo(rs.getString("task_id")),
+                                rs.getString("copy_id"),
                                 rs.getString("username"),
                                 rs.getString("params"),
-                                rs.getDate("created"),
+                                rs.getTimestamp("created", Calendar.getInstance()),
                                 rs.getString("comment"),
                                 rs.getString("result"),
-                                rs.getDate("finished"))
+                                rs.getTimestamp("finished", Calendar.getInstance()))
                         );
                     }
                     return result;

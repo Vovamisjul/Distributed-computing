@@ -46,10 +46,23 @@ public class SettingsController {
         deviceDao.addPossibleTask(request.getRemoteUser(), task.taskId);
     }
 
+    @RequestMapping(value = "/rating", method = RequestMethod.GET)
+    public Rating getRating(HttpServletRequest request) {
+        return new Rating(deviceDao.getRating(request.getRemoteUser()));
+    }
+
     @Validated
     private static class Task {
         @NotNull
         public String taskId;
+    }
+
+    private static class Rating {
+        public double rating;
+
+        public Rating(double rating) {
+            this.rating = rating;
+        }
     }
 
 }

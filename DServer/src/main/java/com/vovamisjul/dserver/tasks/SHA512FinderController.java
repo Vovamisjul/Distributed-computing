@@ -2,30 +2,25 @@ package com.vovamisjul.dserver.tasks;
 
 import com.vovamisjul.dserver.models.Device;
 import com.vovamisjul.dserver.models.ClientMessage;
-import org.javatuples.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.vovamisjul.dserver.tasks.MessageTypes.*;
 import static java.lang.Integer.parseInt;
 
 /**
  * Broots all chats from base64 encoding in same sequence
- * Sends tasks like to broot from 'AAAAA' to 'AAAAB': that means that values like
- * AAAAA, BAAAA, CAAAA,.../AAAA,ABAAA,BBAAA,..., +///A, ////A should be brooted
+ * Sends tasks like to broot from '!!!!!' to '"!!!!': that means that values like
+ * !!!!!, !!!!", !!!!#, ..., !!!!~, !!!"!, !!!"", ... , ~~~~}, ~~~~~ should be brooted
  * <br>
  * LastHashed - not included
  * <br>
- * Characters - ASCII 0x21/33 (!) to 0x7E/126 (~)
+ * Characters - ASCII 0x21/33 (!) to 0x7E/126 (~). More - http://www.asciitable.com/
  */
 public class SHA512FinderController extends AbstractTaskController {
 
@@ -38,7 +33,8 @@ public class SHA512FinderController extends AbstractTaskController {
     private volatile BigInteger lastHashed = BigInteger.ZERO;
     private final BigInteger defaultValue = new BigInteger(new byte[]{(byte) 1, 0, 0, 0});
     private List<Device> devices = new ArrayList<>();
-    private final Map<String, Pair<BigInteger, BigInteger>> lastDevicesJob = new HashMap<>(); // value - vair of start and end string to hash
+    private final Map<String, DeviceJob> lastDevicesJob = new HashMap<>(); // value - vair of start and end string to hash
+    private final Queue<DeviceJob> notConfirmedJobs = new LinkedList<>();
     private final List<String> answers = new ArrayList<>();
     private final Queue<Device> lostDevices = new LinkedList<>();
     private volatile boolean end = false;
@@ -66,7 +62,7 @@ public class SHA512FinderController extends AbstractTaskController {
     public void processClientMessage(String deviceId, ClientMessage message) {
         Device device = repository.getDevice(deviceId);
         if (device.isDisconnected()) {
-            onDeviceReconnect(deviceId, message);
+            onDeviceReconnect(deviceId);
             device.setDisconnected(false);
         }
 
@@ -75,16 +71,83 @@ public class SHA512FinderController extends AbstractTaskController {
                 addNewDevice(deviceId);
                 break;
             case ENDED_TASK:
+                JobResult result = new JobResult(Boolean.parseBoolean(message.getData("found")));
                 if (message.getData("found").equals("true")) {
                     for (int i = 0; i < Integer.parseInt(message.getData("answerCount")); i++) {
-                        answers.add(message.getData("answer" + i));
+                        String answer = message.getData("answer" + i);
+                        result.addAnswer(answer);
                     }
                 }
+
+                DeviceJob job = lastDevicesJob.get(deviceId);
+                job.addResult(deviceId, result);
+                if (job.matchesResult(result)) {
+                    if (job.resultCount() > 1) {
+                        for (String value : result) {
+                            answers.add(value);
+                        }
+                        for (String jobDevice : job.getDevices()) {
+                            repository.getDevice(jobDevice).incRating();
+                        }
+                    }
+                } else { // doesn't match
+                    List<String> deviceIds = job.getDevices();
+                    if (job.resultCount() == 2) { // need to compare rating or ask 3rd device
+                        Device device0 = repository.getDevice(deviceIds.get(0));
+                        Device device1 = repository.getDevice(deviceIds.get(1));
+                        switch (Device.compareRating(device0, device1, 5)) {
+                            case 1:
+                                for (String value : job.getResult(deviceIds.get(0))) {
+                                    answers.add(value);
+                                }
+                                device1.decRating();
+                                break;
+                            case -1:
+                                for (String value : job.getResult(deviceIds.get(1))) {
+                                    answers.add(value);
+                                }
+                                device0.decRating();
+                                break;
+                            case 0:
+                                notConfirmedJobs.add(job);
+                        }
+                    } else if (job.resultCount() == 3) { // we are the 3rd device
+                        deviceIds.remove(deviceId);
+                        Device device0 = repository.getDevice(deviceIds.get(0));
+                        Device device1 = repository.getDevice(deviceIds.get(1));
+                        if (job.getResult(deviceIds.get(0)).equals(result)) {
+                            device0.incRating();
+                            device.incRating();
+                            device1.decRating();
+
+                            for (String value : result) {
+                                answers.add(value);
+                            }
+                        } else if (job.getResult(deviceIds.get(1)).equals(result)) {
+                            device1.incRating();
+                            device.incRating();
+                            device0.decRating();
+
+                            for (String value : result) {
+                                answers.add(value);
+                            }
+                        } else { // all answers are different, than apply device with max rating
+                            Device maxRating = Stream.of(device, device0, device1).max(Comparator.comparingDouble(Device::getRating)).get();
+
+                            for (String value : job.getResult(maxRating.getId())) {
+                                answers.add(value);
+                            }
+                        }
+                    }
+                    // else we are the 1st device, do nothing and wait for the second one
+                }
+
                 synchronized (this) {
                     device.addMessage(creaneNextClientMessage(deviceId));
                 }
                 break;
         }
+
     }
 
     private synchronized void addNewDevice(String deviceId) {
@@ -118,17 +181,18 @@ public class SHA512FinderController extends AbstractTaskController {
      * Searches all other devices job to find, to whoom its(disconnecteds) task was
      * entrusted, then creates new message to process for entrusted.
      */
-    private synchronized void onDeviceReconnect(String deviceId, ClientMessage message) {
-            lostDevices.removeIf(device -> device.getId().equals(deviceId));
-            Pair<BigInteger, BigInteger> completedHash = lastDevicesJob.get(deviceId);
-            Optional<Map.Entry<String, Pair<BigInteger, BigInteger>>> entrustedDeviceJob =
-                    lastDevicesJob.entrySet().stream().
-                            filter(entry -> entry.getValue().equals(completedHash)).
-                            findFirst();
-            if (entrustedDeviceJob.isPresent()) {
-                String entrustedDeviceId = entrustedDeviceJob.get().getKey();
-                repository.getDevice(entrustedDeviceId).addMessage(creaneNextClientMessage(entrustedDeviceId));
-            }
+    private synchronized void onDeviceReconnect(String deviceId) {
+        lostDevices.removeIf(device -> device.getId().equals(deviceId));
+        DeviceJob task = lastDevicesJob.get(deviceId);
+        List<Map.Entry<String, DeviceJob>> entrustedDeviceJobs =
+                lastDevicesJob.entrySet().stream().
+                        filter(entry -> entry.getValue().sameAs(task)).
+                        filter(entry -> !entry.getKey().equals(deviceId)).
+                        collect(Collectors.toList());
+        for (Map.Entry<String, DeviceJob> entry : entrustedDeviceJobs) {
+            String entrustedDeviceId = entry.getKey();
+            repository.getDevice(entrustedDeviceId).addMessage(creaneNextClientMessage(entrustedDeviceId));
+        }
     }
 
     /**
@@ -136,27 +200,44 @@ public class SHA512FinderController extends AbstractTaskController {
      * and it NEED to be synchronized in caller method.
      */
     private ClientMessage creaneNextClientMessage(String deviceId) {
+        if (end) {
+            return new ClientMessage(STOP, getCopyId());
+        }
+
         ClientMessage message = new ClientMessage(START, getCopyId());
         message.addData("required", requiredHash);
+
+        DeviceJob notConfirmed = notConfirmedJobs.poll();
+        if (notConfirmed != null && !notConfirmed.hasDevice(deviceId)) {
+            notConfirmed.addDevice(deviceId);
+            lastDevicesJob.put(deviceId, notConfirmed);
+            message.addData("start", bigIntToString(notConfirmed.start));
+            message.addData("end", bigIntToString(notConfirmed.end));
+            return message;
+        }
+
         Device lostDevice = lostDevices.poll();
         if (lostDevice != null) {
-            Pair<BigInteger, BigInteger> notProcessedHashed = lastDevicesJob.get(lostDevice.getId());
-            lastDevicesJob.put(deviceId, notProcessedHashed);
-            message.addData("start", bigIntToString(notProcessedHashed.getValue0()));
-            message.addData("end", bigIntToString(notProcessedHashed.getValue1()));
-        } else {
-
-            String startStr = bigIntToString(lastHashed);
-            if (startStr.length() > maxStringLength) {
-                sendStopMessages();
-                setResult(answers.toString());
-            }
-            message.addData("start", startStr);
-            BigInteger ending = lastHashed.add(defaultValue);
-            lastDevicesJob.put(deviceId, new Pair<>(lastHashed, ending));
-            message.addData("end", bigIntToString(ending));
-            lastHashed = ending;
+            DeviceJob notProcessed = lastDevicesJob.get(lostDevice.getId());
+            notProcessed.addDevice(deviceId);
+            lastDevicesJob.put(deviceId, notProcessed);
+            message.addData("start", bigIntToString(notProcessed.start));
+            message.addData("end", bigIntToString(notProcessed.end));
+            return message;
         }
+
+        String startStr = bigIntToString(lastHashed);
+        if (startStr.length() > maxStringLength) {
+            end = true;
+            return new ClientMessage(STOP, getCopyId());
+        }
+        message.addData("start", startStr);
+        BigInteger ending = lastHashed.add(defaultValue);
+        DeviceJob job = new DeviceJob(lastHashed, ending, deviceId);
+        lastDevicesJob.put(deviceId, job);
+        notConfirmedJobs.add(job);
+        message.addData("end", bigIntToString(ending));
+        lastHashed = ending;
         return message;
     }
 
@@ -170,7 +251,7 @@ public class SHA512FinderController extends AbstractTaskController {
         String result = "";
 
         BigInteger[] divResult = value.divideAndRemainder(CHARS_BASE);
-        while (divResult[0].compareTo(BigInteger.ZERO) == 1) {
+        while (divResult[0].compareTo(BigInteger.ZERO) > 0) {
             result = bigIntToChar(divResult[1]) + result;
             divResult = divResult[0].divideAndRemainder(CHARS_BASE);
         }
@@ -180,5 +261,97 @@ public class SHA512FinderController extends AbstractTaskController {
 
     private char bigIntToChar(BigInteger value) {
         return (char) (value.intValue() + START_CHAR);
+    }
+
+    private static class DeviceJob {
+        private final Map<String, JobResult> deviceResults = new HashMap<>();
+        private final BigInteger start;
+        private final BigInteger end;
+
+        public DeviceJob(BigInteger start, BigInteger end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public DeviceJob(BigInteger start, BigInteger end, String deviceId) {
+            this(start, end);
+            addDevice(deviceId);
+        }
+
+        public boolean sameAs(DeviceJob that) {
+            return Objects.equals(start, that.start) && Objects.equals(end, that.end);
+        }
+
+        public void addDevice(String deviceId) {
+            deviceResults.put(deviceId, null);
+        }
+
+        public boolean hasDevice(String deviceId) {
+            return deviceResults.containsKey(deviceId);
+        }
+
+        public void addResult(String deviceId, JobResult result) {
+            deviceResults.put(deviceId, result);
+        }
+
+        public JobResult getResult(String deviceId) {
+            return deviceResults.get(deviceId);
+        }
+
+        /**
+         * @return {@code true} if result matches with all device's results and <br/>
+         * {@code false} if result doesn't match with some other device's result
+         */
+        public boolean matchesResult(JobResult result) {
+            return deviceResults.values().stream().allMatch(result::equals);
+        }
+
+        public int resultCount() {
+            return (int) deviceResults.values().stream().
+                    filter(Objects::nonNull)
+                    .count();
+        }
+
+        public List<String> getDevices() {
+            return new ArrayList<>(deviceResults.keySet());
+        }
+    }
+
+    private static class JobResult implements Iterable<String> {
+        private final boolean found;
+        private final List<String> answers;
+
+        public JobResult(boolean found, List<String> answers) {
+            this.found = found;
+            this.answers = answers;
+        }
+
+        public JobResult(boolean found) {
+            this.found = found;
+            this.answers = new ArrayList<>();
+        }
+
+        public void addAnswer(String answer) {
+            answers.add(answer);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            JobResult jobResult = (JobResult) o;
+            return found == jobResult.found && answers.equals(jobResult.answers);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(found, answers);
+        }
+
+        @NotNull
+        @Override
+        public Iterator<String> iterator() {
+            return answers.iterator();
+        }
     }
 }

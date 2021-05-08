@@ -28,7 +28,7 @@ public class DeviceDao {
     // language=SQL
     private static final String INSERT_DEVISE = "INSERT INTO `devices` (`id`, `password`, `refresh_token`) VALUE (?,?,?)";
     // language=SQL
-    private static final String SELECT_DEVISE = "SELECT `devices`.`id`, `performance_rate`, GROUP_CONCAT(DISTINCT `device_tasks`.`task_id` SEPARATOR ', ') AS `tasks` FROM `devices` LEFT JOIN `device_tasks` ON `devices`.`id` = `device_tasks`.`device_id` WHERE `devices`.`id`=?";
+    private static final String SELECT_DEVISE = "SELECT `devices`.`id`, `rating`, GROUP_CONCAT(DISTINCT `device_tasks`.`task_id` SEPARATOR ', ') AS `tasks` FROM `devices` LEFT JOIN `device_tasks` ON `devices`.`id` = `device_tasks`.`device_id` WHERE `devices`.`id`=?";
     // language=SQL
     private static final String SELECT_DEVISES_DETAILS = "SELECT `id`, `password` FROM `devices` WHERE `id`=?";
     // language=SQL
@@ -36,7 +36,9 @@ public class DeviceDao {
     // language=SQL
     private static final String ADD_DEVISE_TASKS = "INSERT INTO `device_tasks` (`device_id`, `task_id`) VALUES (?,?)";
     // language=SQL
-    private static final String UPDATE_PERFORMANCE_RATE = "UPDATE `devices` SET `performance_rate`=? WHERE `id`=?";
+    private static final String UPDATE_RATING = "UPDATE `devices` SET `rating`=? WHERE `id`=?";
+    // language=SQL
+    private static final String SELECT_RATING = "SELECT `rating` FROM `devices` WHERE `id`=?";
     // language=SQL
     private static final String SELECT_TOKEN = "SELECT `refresh_token` FROM `devices` WHERE `id`=?";
     // language=SQL
@@ -45,8 +47,20 @@ public class DeviceDao {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public void updatePerformance(String id, float power) {
-        jdbcTemplate.update(UPDATE_PERFORMANCE_RATE, power, id);
+    public void updateRating(String id, double rating) {
+        jdbcTemplate.update(UPDATE_RATING, rating, id);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public double getRating(String id) {
+        return jdbcTemplate.query(SELECT_RATING,
+                rs -> {
+                    if (rs.next()) {
+                        return rs.getDouble("rating");
+                    }
+                    return 0.5;
+                },
+                id);
     }
 
     public void addNewDevice(String id, String password, String refreshToken) {
@@ -59,6 +73,7 @@ public class DeviceDao {
                 rs -> {
                     if (rs.next()) {
                         Device device = new Device(id);
+                        device.setRating(rs.getFloat("rating"));
                         String tasks = rs.getString("tasks");
                         if (tasks != null) {
                             device.setAvaliableTasks(new HashSet<>(Arrays.asList(tasks.split(", "))));
@@ -104,7 +119,7 @@ public class DeviceDao {
                 SELECT_TOKEN,
                 rs -> {
                     if (rs.next()) {
-                        return token.equals(rs.getString("password"));
+                        return token.equals(rs.getString("refresh_token"));
                     }
                     return false;
                 },

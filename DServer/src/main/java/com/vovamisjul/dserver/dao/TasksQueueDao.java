@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -133,9 +134,10 @@ public class TasksQueueDao {
                     while (rs.next()) {
                         result.add(new QueuedTaskInfo(
                                 taskControllerRepository.getTaskInfo(rs.getString("task_id")),
+                                rs.getString("copy_id"),
                                 rs.getString("username"),
                                 rs.getString("params"),
-                                rs.getDate("created"),
+                                rs.getTimestamp("created", Calendar.getInstance()),
                                 rs.getString("comment"))
                         );
                     }
