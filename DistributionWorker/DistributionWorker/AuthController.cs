@@ -16,8 +16,6 @@ namespace DistributionWorker
         {
             if (Properties.Settings.Default.AccessToken == "")
             {
-                Properties.Settings.Default.Reset();
-                Properties.Settings.Default.Save();
                 if (Properties.Settings.Default.DeviceID != "")
                 {
                     throw new UnauthorizedException();
@@ -40,6 +38,19 @@ namespace DistributionWorker
             Properties.Settings.Default.DeviceID = registration.Id;
             Properties.Settings.Default.AccessToken = registration.AccessToken;
             Properties.Settings.Default.RefreshToken = registration.RefreshToken;
+            Properties.Settings.Default.Save();
+        }
+
+        public static async Task Login(string password)
+        {
+            var response = await HttpSender.Login(Properties.Settings.Default.DeviceID, password);
+            if (response.StatusCode != HttpStatusCode.Created)
+            {
+                throw new UnregisteredException();
+            }
+            var login = response.Data;
+            Properties.Settings.Default.AccessToken = login.AccessToken;
+            Properties.Settings.Default.RefreshToken = login.RefreshToken;
             Properties.Settings.Default.Save();
         }
 

@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using TasksBase;
 
 namespace DistributionWorker.Tasks
@@ -87,7 +88,6 @@ namespace DistributionWorker.Tasks
         {
             CurrentTask = GetTaskProcesser(taskId);
             ThreadPool.QueueUserWorkItem(PollClientMessages);
-
         }
 
         private static async void PollClientMessages(object state)
@@ -97,7 +97,7 @@ namespace DistributionWorker.Tasks
                 var response = await HttpSender.GetClientMessages();
                 if (response.Data != null)
                 {
-                    CurrentTask.OnNewMessages(response.Data);
+                    CurrentTask?.OnNewMessages(response.Data);
                 }
             }
         }
@@ -113,7 +113,8 @@ namespace DistributionWorker.Tasks
 
         public static void Success()
         {
-
+            CurrentTask = null;
+            MessageBox.Show("Task processing finished. Thank you for participating!", "Info");
         }
     }
 }

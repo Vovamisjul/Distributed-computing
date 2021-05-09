@@ -20,9 +20,10 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <DockPanel Margin="5">
+                        <TextBlock DockPanel.Dock="Bottom" TextWrapping="Wrap" Text="{Binding Comment}" FontStyle="Italic" />
                         <TextBlock DockPanel.Dock="Bottom" TextWrapping="Wrap" Text="{Binding Description}" />
                         <TextBlock DockPanel.Dock="Left" FontSize="18" Text="{Binding Name}" />
-                        <TextBlock TextAlignment="Right" DockPanel.Dock="Right" Text="{Binding Id}" />
+                        <TextBlock DockPanel.Dock="Right" TextAlignment="Right" Text="{Binding Id}" />
                     </DockPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

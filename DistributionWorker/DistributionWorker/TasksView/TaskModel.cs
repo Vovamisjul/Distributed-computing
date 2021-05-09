@@ -69,6 +69,21 @@ namespace DistributionWorker.TasksView
 
         }
 
+        private string comment;
+        public string Comment
+        {
+            get
+            {
+                return comment;
+            }
+            set
+            {
+                comment = value;
+                OnPropertyChanged("Comment");
+            }
+
+        }
+
         private bool downloaded;
         public bool Downloaded
         {

@@ -14,5 +14,11 @@ namespace DistributionWorker.Tasks
         public string CopyId { get; set; }
         [JsonProperty(PropertyName = "taskInfo")]
         public TaskInfo TaskInfo { get; set; }
+        [JsonProperty(PropertyName = "comment")]
+        public string Comment { get; set; }
+        [JsonProperty(PropertyName = "created")]
+        public DateTime Created { get; set; }
+        [JsonProperty(PropertyName = "author")]
+        public string Author { get; set; }
     }
 }

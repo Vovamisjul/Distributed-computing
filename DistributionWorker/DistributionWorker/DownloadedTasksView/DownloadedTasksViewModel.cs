@@ -41,7 +41,8 @@ namespace DistributionWorker.DownloadedTasksView
                         Id = task.TaskInfo.Id,
                         CopyId = task.CopyId,
                         Name = task.TaskInfo.Name,
-                        Description = task.TaskInfo.Description
+                        Description = task.TaskInfo.Description,
+                        Comment = task.Comment,
                     });
                 }
             }

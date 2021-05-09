@@ -66,6 +66,11 @@ namespace DistributionWorker
             return await SendAuthRequest<IList<ClientMessage>>("messages", Method.POST);
         }
 
+        public static async Task<IRestResponse<RatingT>> GetRating()
+        {
+            return await SendAuthRequest<RatingT>("settings/rating", Method.GET);
+        }
+
         public static async Task<IRestResponse<IList<ClientMessage>>> SendClientMessage(ClientMessage message)
         {
             return await SendAuthRequest<IList<ClientMessage>>("messages", Method.POST, new
@@ -94,7 +99,7 @@ namespace DistributionWorker
             {
                 if (retry)
                 {
-                    throw new UnregisteredException();
+                    throw new UnauthorizedException();
                 }
                 var tokens = await SendRequest<Response>("refreshtoken", Method.POST, new
                 {
@@ -102,7 +107,7 @@ namespace DistributionWorker
                 });
                 if (tokens.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    throw new UnregisteredException();
+                    throw new UnauthorizedException();
                 }
                 AuthController.SaveTokens(tokens.Data.AccessToken, tokens.Data.RefreshToken);
                 return await SendAuthRequest<T>(url, method, content, true);
@@ -119,5 +124,11 @@ namespace DistributionWorker
         public string AccessToken { get; set; }
         [JsonProperty(PropertyName = "refreshToken")]
         public string RefreshToken { get; set; }
+    }
+
+    public class RatingT
+    {
+        [JsonProperty(PropertyName = "rating")]
+        public double Rating { get; set; }
     }
 }
