@@ -1,7 +1,6 @@
 package com.vovamisjul.dserver.dao;
 
 import com.vovamisjul.dserver.dao.DeviceDao;
-import com.vovamisjul.dserver.models.Device;
 import com.vovamisjul.dserver.models.DeviceDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

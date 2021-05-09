@@ -1,4 +1,4 @@
-package com.vovamisjul.dserver.tasks;
+package tasks;
 
 public interface MessageTypes {
     // Required fields - ended - boolean, answer - if ended, answerCount - if answered, answer{i} - i answer

@@ -2,7 +2,6 @@ package com.vovamisjul.dserver.web;
 
 import com.vovamisjul.dserver.dao.TaskInfoDao;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
-import com.vovamisjul.dserver.tasks.TaskInfo;
 import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import tasks.TaskInfo;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileInputStream;

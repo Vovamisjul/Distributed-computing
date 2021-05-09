@@ -1,5 +1,8 @@
 package com.vovamisjul.dserver.tasks;
 
+import tasks.AbstractTaskController;
+import tasks.TaskInfo;
+
 public class FactorialPrimesTaskInfo extends TaskInfo {
     @Override
     public String getId() {

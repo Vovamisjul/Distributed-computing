@@ -1,5 +1,8 @@
 package com.vovamisjul.dserver.tasks;
 
+import tasks.AbstractTaskController;
+import tasks.TaskInfo;
+
 public class SHA512TaskInfo extends TaskInfo {
 
     @Override

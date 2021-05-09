@@ -1,8 +1,7 @@
 package com.vovamisjul.dserver.dao;
 
-import com.vovamisjul.dserver.models.Device;
 import com.vovamisjul.dserver.models.DeviceDetails;
-import com.vovamisjul.dserver.web.MessagesController;
+import models.Device;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

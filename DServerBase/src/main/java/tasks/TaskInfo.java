@@ -1,6 +1,4 @@
-package com.vovamisjul.dserver.tasks;
-
-import java.util.Arrays;
+package tasks;
 
 public abstract class TaskInfo {
 

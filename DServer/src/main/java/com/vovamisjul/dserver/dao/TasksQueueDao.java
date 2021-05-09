@@ -1,6 +1,5 @@
 package com.vovamisjul.dserver.dao;
 
-import com.vovamisjul.dserver.tasks.AbstractTaskController;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import com.vovamisjul.dserver.tasks.TaskStatus;
 import com.vovamisjul.dserver.tasks.objects.FinishedTaskInfo;
@@ -10,6 +9,7 @@ import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import tasks.AbstractTaskController;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;

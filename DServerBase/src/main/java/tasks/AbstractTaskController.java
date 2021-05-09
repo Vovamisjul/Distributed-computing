@@ -1,7 +1,7 @@
-package com.vovamisjul.dserver.tasks;
+package tasks;
 
-import com.vovamisjul.dserver.models.ClientMessage;
-import com.vovamisjul.dserver.models.Device;
+import models.ClientMessage;
+import models.Device;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,11 +23,11 @@ public abstract class AbstractTaskController {
 
     private String authorId;
 
-    AbstractTaskController(String taskId) {
+    public AbstractTaskController(String taskId) {
         this(taskId, UUID.randomUUID().toString());
     }
 
-    AbstractTaskController(String taskId, String copyId) {
+    public AbstractTaskController(String taskId, String copyId) {
         this.taskId = taskId;
         this.copyId = copyId;
     }

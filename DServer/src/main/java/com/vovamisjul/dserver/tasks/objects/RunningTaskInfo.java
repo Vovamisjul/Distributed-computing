@@ -1,6 +1,6 @@
 package com.vovamisjul.dserver.tasks.objects;
 
-import com.vovamisjul.dserver.tasks.TaskInfo;
+import tasks.TaskInfo;
 
 import java.util.Date;
 

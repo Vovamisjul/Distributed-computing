@@ -1,17 +1,18 @@
 package com.vovamisjul.dserver.tasks;
 
-import com.vovamisjul.dserver.models.Device;
-import com.vovamisjul.dserver.models.ClientMessage;
+import models.ClientMessage;
+import models.Device;
 import org.jetbrains.annotations.NotNull;
+import tasks.AbstractTaskController;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.concurrent.SynchronousQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.vovamisjul.dserver.tasks.MessageTypes.*;
 import static java.lang.Integer.parseInt;
+import static tasks.MessageTypes.*;
 
 /**
  * Broots all chats from base64 encoding in same sequence
@@ -32,11 +33,11 @@ public class SHA512FinderController extends AbstractTaskController {
     private int maxStringLength;
     private volatile BigInteger lastHashed = BigInteger.ZERO;
     private final BigInteger defaultValue = new BigInteger(new byte[]{(byte) 1, 0, 0, 0});
-    private List<Device> devices = new ArrayList<>();
+    private Set<Device> devices = new HashSet<>();
     private final Map<String, DeviceJob> lastDevicesJob = new HashMap<>(); // value - vair of start and end string to hash
     private final Queue<DeviceJob> notConfirmedJobs = new LinkedList<>();
     private final List<String> answers = new ArrayList<>();
-    private final Queue<Device> lostDevices = new LinkedList<>();
+    private final Queue<Device> lostDevices = new SynchronousQueue<>();
     private volatile boolean end = false;
 
     SHA512FinderController(String taskId) {
@@ -50,7 +51,7 @@ public class SHA512FinderController extends AbstractTaskController {
     @Override
     public void startProcessing(List<Device> freeDevices) {
         super.startProcessing(freeDevices);
-        devices = new ArrayList<>(freeDevices);
+        devices = new HashSet<>(freeDevices);
         synchronized (this) {
             for (Device device : devices) {
                 device.addMessage(creaneNextClientMessage(device.getId()));
@@ -68,7 +69,16 @@ public class SHA512FinderController extends AbstractTaskController {
 
         switch (message.getType()) {
             case START:
-                addNewDevice(deviceId);
+                if (!devices.contains(device)) {
+                    processNewDevice(deviceId);
+                } else if (!lostDevices.contains(device)) { // client exit from program, but device was not marked as disconnected
+                    ClientMessage answerMsg = new ClientMessage(START, getCopyId());
+                    answerMsg.addData("required", requiredHash);
+                    DeviceJob job = lastDevicesJob.get(deviceId);
+                    message.addData("start", bigIntToString(job.start));
+                    message.addData("end", bigIntToString(job.end));
+                    device.addMessage(answerMsg);
+                }
                 break;
             case ENDED_TASK:
                 JobResult result = new JobResult(Boolean.parseBoolean(message.getData("found")));
@@ -150,7 +160,7 @@ public class SHA512FinderController extends AbstractTaskController {
 
     }
 
-    private synchronized void addNewDevice(String deviceId) {
+    private synchronized void processNewDevice(String deviceId) {
         Device newDevice = repository.getDevice(deviceId);
         devices.add(newDevice);
         newDevice.addMessage(creaneNextClientMessage(deviceId));

@@ -1,17 +1,17 @@
 package com.vovamisjul.dserver.dao;
 
-import com.vovamisjul.dserver.models.Device;
-import com.vovamisjul.dserver.tasks.DeviceRepository;
+import models.Device;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tasks.DeviceRepository;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import static com.vovamisjul.dserver.models.JobStatus.READY;
+import static models.JobStatus.READY;
 
 @Component
 public class DeviceController implements DeviceRepository {

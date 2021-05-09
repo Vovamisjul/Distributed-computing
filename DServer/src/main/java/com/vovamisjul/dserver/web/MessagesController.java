@@ -2,10 +2,9 @@ package com.vovamisjul.dserver.web;
 
 import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.dao.DeviceDao;
-import com.vovamisjul.dserver.models.ClientMessage;
-import com.vovamisjul.dserver.models.Device;
-import com.vovamisjul.dserver.tasks.AbstractTaskController;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
+import models.ClientMessage;
+import models.Device;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
+import tasks.AbstractTaskController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
@@ -25,10 +25,10 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
-import static com.vovamisjul.dserver.models.JobStatus.READY;
-import static com.vovamisjul.dserver.tasks.MessageTypes.START;
+import static models.JobStatus.READY;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static tasks.MessageTypes.START;
 
 /**
  * To register your device in cahce - send any message

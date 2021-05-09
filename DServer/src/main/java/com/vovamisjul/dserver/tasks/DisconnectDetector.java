@@ -1,14 +1,14 @@
 package com.vovamisjul.dserver.tasks;
 
 import com.vovamisjul.dserver.dao.DeviceController;
-import com.vovamisjul.dserver.models.Device;
 import com.vovamisjul.dserver.web.filters.JWTDeviceAuthFilter;
+import models.Device;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tasks.AbstractTaskController;
 
 import javax.annotation.PostConstruct;
 import java.util.concurrent.Executors;

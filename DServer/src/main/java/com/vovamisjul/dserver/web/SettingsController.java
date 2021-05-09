@@ -3,7 +3,6 @@ package com.vovamisjul.dserver.web;
 import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.dao.DeviceDao;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
-import com.vovamisjul.dserver.tasks.TaskInfo;
 import com.vovamisjul.dserver.web.filters.JWTTaskAuthFilter;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
