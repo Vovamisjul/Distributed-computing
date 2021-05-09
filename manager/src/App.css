@@ -1,0 +1,27 @@
+.noResult {
+    text-align: center;
+    font-size: 21px;
+    padding-top: 50px;
+}
+
+.list {
+
+}
+
+.listElement {
+    background: #eff2fb;
+    border-radius: 10px;
+    margin: 20px;
+    padding: 20px;
+    border: #b7b7b7 1px solid;
+}
+
+.noSelect {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}

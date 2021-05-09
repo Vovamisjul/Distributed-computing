@@ -1,16 +1,19 @@
 import controller from "../../UserController";
-import {Redirect, withRouter} from "react-router-dom";
+import {withRouter} from "react-router-dom";
 import React from "react";
+import ExpandingTaskList from "./ExpandingTaskList";
 
 class RunningTasks extends React.Component {
 
-    async componentDidMount() {
-        await this.updateTasks();
-        this.timerId = setInterval(() => this.updateTasks(), 5000);
+    constructor(props) {
+        super(props);
+        this.state = {
+            tasks: []
+        };
     }
 
-    componentWillUnmount() {
-        clearInterval(this.timerId);
+    async componentDidMount() {
+        await this.updateTasks();
     }
 
     async updateTasks() {
@@ -27,28 +30,22 @@ class RunningTasks extends React.Component {
     }
 
     render() {
-        if (!controller.isLogged()) {
-            return <Redirect to="/login"/>;
-        }
-        return <div>{
-            this.state && this.state.tasks && this.state.tasks.length > 0 ?
-                <div
-                    className="list">
-                    {
-                        this.state && this.state.tasks.map((task) => {
-                            return <div className="listElement">
-                                <p>{task.copyId}</p>
-                                <p>{task.author}</p>
-                                <p>{task.taskInfo.id}</p>
-                                <p>{task.taskInfo.name}</p>
-                                <p>{task.taskInfo.description}</p>
+        return <ExpandingTaskList className="runningTasks" title="Running tasks" show={this.state.tasks.length > 0} countText={`You have ${this.state.tasks.length} running tasks.`} absentText="There are no your running tasks">
+            {
+                this.state && this.state.tasks.map((task) => {
+                    return <div className="listElement" key={task.copyId}>
+                        <div className="userTaskHeader">
+                            <div className="userTaskName">{task.taskInfo.name}</div>
+                            <div className="userTaskDate">
+                                <div className="userTaskCreated"><b>Created at: </b>{new Date(task.created).toLocaleString()}</div>
                             </div>
-                        })
-                    }
-                </div> :
-                <div className="noResult">There are no conversations - create a new one, or wait for the
-                    invite</div>
-        }</div>;
+                        </div>
+                        <div className="userTaskParams"><b>Params: </b>{task.params || <i>none</i>}</div>
+                        <div className="userTaskComment">{task.comment}</div>
+                    </div>
+                })
+            }
+        </ExpandingTaskList>;
     }
 }
 

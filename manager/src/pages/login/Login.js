@@ -1,6 +1,7 @@
 import React from "react";
 import controller from "../../UserController";
-import Redirect from "react-router-dom/es/Redirect";
+import {Redirect} from "react-router-dom";
+import "./Login.css"
 
 export default class Login extends React.Component {
 
@@ -32,17 +33,19 @@ export default class Login extends React.Component {
                     <h1>Sign in!</h1>
                     <form onSubmit={this.login}>
                         <input
+                            className="registerInput"
                             placeholder="Username"
                             ref={this.username}
                         />
                         <br/>
                         <input
+                            className="registerInput"
                             type="password"
                             ref={this.password}
                             placeholder="Password"
                         /><br/>
 
-                        <input className="registerContentSubmit" type='submit'/>
+                        <input className="registerSubmit" type='submit' value="Login"/>
                     </form>
                 </div>
             </div>

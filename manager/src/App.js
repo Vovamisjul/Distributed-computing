@@ -4,6 +4,7 @@ import NotFound from "./pages/not_found/NotFound";
 import AllTasks from "./pages/all_tasks/AllTasks";
 import RunningTasks from "./pages/running_tasks/RunningTasks";
 import UserTasks from "./pages/user_tasks/UserTasks";
+import "./App.css"
 
 function App() {
     return (
@@ -13,7 +14,7 @@ function App() {
                     <Route exact path="/(|login)" component={Login}/>
                     <Route path="/tasks" component={AllTasks}/>
                     <Route path="/running" component={RunningTasks}/>
-                    <Route path="/explorer" component={UserTasks}/>
+                    <Route path="/manager" component={UserTasks}/>
                     <Route component={NotFound}/>
                 </Switch>
             </div>

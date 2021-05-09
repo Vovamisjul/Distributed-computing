@@ -1,7 +1,16 @@
 import React from "react";
 import controller from "../../UserController";
+import "./AllTasks.css"
+import Header from "../header/Header";
 
 export default class AllTasks extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            tasks: []
+        };
+    }
 
     async componentDidMount() {
         try {
@@ -17,22 +26,25 @@ export default class AllTasks extends React.Component {
     }
 
     render() {
-        return <div>{
-            this.state && this.state.tasks && this.state.tasks.length > 0 ?
-                <div
-                    className="list">
-                    {
-                        this.state && this.state.tasks.map((task) => {
-                            return <div className="listElement">
-                                <p>{task.id}</p>
-                                <p>{task.name}</p>
-                                <p>{task.description}</p>
-                            </div>
-                        })
-                    }
-                </div> :
-                <div className="noResult">There are no conversations - create a new one, or wait for the
-                    invite</div>
+        return <div>
+            <Header/>
+            {
+                this.state.tasks.length > 0 ?
+                    <div
+                        className="list">
+                        {
+                            this.state && this.state.tasks.map((task) => {
+                                return <div className="listElement" key={task.id}>
+                                    <div className="taskInfoHeader">
+                                        <div className="taskInfoName">{task.name}</div>
+                                        <div className="taskInfoId">{task.id}</div>
+                                    </div>
+                                    <div className="taskInfoDescription">{task.description}</div>
+                                </div>
+                            })
+                        }
+                    </div> :
+                    <div className="noResult">There are no available tasks on server.</div>
             }</div>;
     }
 }

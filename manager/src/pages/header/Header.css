@@ -1,0 +1,51 @@
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 20px;
+    border-radius: 0 0 20px 20px;
+    background: #3b4c84;
+    align-items: stretch;
+}
+
+.headerCreds {
+    display: flex;
+}
+
+.headerLinks {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 0 0 -37px 20px;
+}
+
+.headerLinks a {
+    padding: 10px 20px;
+    background: #ced5e8;
+    margin: 0 4px;
+    text-decoration: none;
+    color: black;
+    border-radius: 7px 7px 0 0;
+    font-size: 19px;
+}
+
+.headerCurrentLink {
+    background: white !important;
+}
+
+.headerUsername {
+    font-size: 20pt;
+    padding: 0 30px 5px;
+    color: #fff;
+    font-weight: 500;
+}
+
+.logout {
+    font-size: 14pt;
+    font-weight: 100;
+    padding: 8px 20px 0;
+    background: white;
+    border-radius: 9px;
+    cursor: pointer;
+}
+

@@ -1,0 +1,18 @@
+.taskInfoName {
+    font-weight: 900;
+    font-size: 22px;
+}
+
+.taskInfoId {
+    font-size: 15px;
+}
+
+.taskInfoDescription {
+    font-size: 18px;
+}
+
+.taskInfoHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

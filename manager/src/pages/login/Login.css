@@ -1,0 +1,36 @@
+.registerContent {
+    text-align: center;
+    border: 3px solid #9094ad;
+    border-radius: 18px;
+    height: 300px;
+    width: 400px;
+    margin: 200px calc(50% - 200px) 0;
+    background: #d6dcec;
+}
+
+.registerInput {
+    width: 80%;
+    height: 40px;
+    margin: 10px 0;
+    border-radius: 11px;
+    font-size: 18px;
+    background: #fafbff;
+    border: 2px;
+    padding-left: 10px;
+}
+
+.registerSubmit {
+    height: 40px;
+    width: 100px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    background: #fafbff;
+    border: 2px;
+    cursor: pointer;
+}
+
+body {
+    background: #fafbff;
+}
