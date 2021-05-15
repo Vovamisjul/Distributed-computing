@@ -35,7 +35,7 @@ class QueuedTasks extends React.Component {
                 this.state.tasks.map((task) => {
                     return <div className="listElement" key={task.copyId}>
                         <div className="userTaskHeader">
-                            <div className="userTaskName">{task.taskInfo.name}</div>
+                            <div className="userTaskName">{task.taskInfo ? task.taskInfo.name : "Unknown task type"}</div>
                             <div className="userTaskDate">
                                 <div className="userTaskCreated"><b>Created at: </b>{new Date(task.created).toLocaleString()}</div>
                             </div>

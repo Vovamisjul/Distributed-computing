@@ -97,7 +97,7 @@ namespace DistributionWorker.Tasks
                 var response = await HttpSender.GetClientMessages();
                 if (response.Data != null)
                 {
-                    CurrentTask?.OnNewMessages(response.Data);
+                    ThreadPool.QueueUserWorkItem(st => CurrentTask?.OnNewMessages(response.Data));
                 }
             }
         }

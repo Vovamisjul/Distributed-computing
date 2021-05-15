@@ -30,7 +30,7 @@ namespace SHA512Task
                 switch (message.Type)
                 {
                     case MessageTypes.START:
-                        ThreadPool.QueueUserWorkItem(ProcessSHA, message.Data);
+                        ProcessSHA(message.Data);
                         break;
                     case MessageTypes.STOP:
                         success();
@@ -49,9 +49,8 @@ namespace SHA512Task
             });
         }
 
-        public void ProcessSHA(object state)
+        public void ProcessSHA(IDictionary<string, string> data)
         {
-            var data = state as IDictionary<string, string>;
             var required = data["required"];
             var start = data["start"];
             var end = data["end"];
