@@ -1,10 +1,9 @@
 package com.vovamisjul.dserver.dao;
 
+import com.vovamisjul.dserver.tasks.DeviceController;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import com.vovamisjul.dserver.tasks.TaskStatus;
-import com.vovamisjul.dserver.tasks.objects.FinishedTaskInfo;
 import com.vovamisjul.dserver.tasks.objects.QueuedTaskInfo;
-import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,7 +14,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class TasksQueueDao {

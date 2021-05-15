@@ -1,12 +1,11 @@
-package com.vovamisjul.dserver.models;
+package models;
 
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-
 import java.util.*;
 
-import static com.vovamisjul.dserver.models.JobStatus.UNACTIVE;
+import static models.JobStatus.UNACTIVE;
 
 @ParametersAreNonnullByDefault
 public class Device {
@@ -14,7 +13,7 @@ public class Device {
     private volatile double rating;
     private volatile JobStatus jobStatus = UNACTIVE;
     private final List<ClientMessage> unsentMessages = new LinkedList<>();
-    private Set<String> avaliableTasks = new HashSet<>();
+    private Set<String> availableTasks = new HashSet<>();
     private volatile String currentTaskCopyId;
     private volatile long lastTimeActive;
     private volatile boolean disconnected;
@@ -58,7 +57,7 @@ public class Device {
         return 0;
     }
 
-    public static long getRatingSteps(double rating) {
+    private static long getRatingSteps(double rating) {
         if (rating >= 0.5) {
             return Math.round(- Math.log(1 - rating) / Math.log(2) - 1);
         } else {
@@ -106,12 +105,12 @@ public class Device {
         this.jobStatus = jobStatus;
     }
 
-    public Set<String> getAvaliableTasks() {
-        return avaliableTasks;
+    public Set<String> getAvailableTasks() {
+        return availableTasks;
     }
 
-    public void setAvaliableTasks(Set<String> avaliableTasks) {
-        this.avaliableTasks = avaliableTasks;
+    public void setAvailableTasks(Set<String> availableTasks) {
+        this.availableTasks = availableTasks;
     }
 
     public long getLastTimeActive() {
@@ -139,7 +138,15 @@ public class Device {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Device device = (Device) o;
+        return id.equals(device.id);
+    }
+
+    @Override
     public int hashCode() {
-        return id.hashCode();
+        return Objects.hash(id);
     }
 }

@@ -1,6 +1,5 @@
 package com.vovamisjul.dserver.tasks;
 
-import com.vovamisjul.dserver.dao.DeviceController;
 import com.vovamisjul.dserver.web.filters.JWTDeviceAuthFilter;
 import models.Device;
 import org.apache.logging.log4j.LogManager;

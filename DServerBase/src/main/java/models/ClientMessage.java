@@ -1,16 +1,20 @@
-package com.vovamisjul.dserver.models;
+package models;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Message from and to client
- * To see required fileds for each message type, see {@link com.vovamisjul.dserver.tasks.MessageTypes}
+ * To see required fileds for each message type, see {@link tasks.MessageTypes}
  */
 public class ClientMessage {
     private String type;
     private String taskCopyId;
     private Map<String, String> data =  new HashMap<>();
+
+    public ClientMessage() {
+
+    }
 
     public ClientMessage(String type, String taskCopyId) {
         this.type = type;

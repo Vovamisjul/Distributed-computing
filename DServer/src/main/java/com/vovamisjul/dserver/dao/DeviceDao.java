@@ -75,7 +75,7 @@ public class DeviceDao {
                         device.setRating(rs.getFloat("rating"));
                         String tasks = rs.getString("tasks");
                         if (tasks != null) {
-                            device.setAvaliableTasks(new HashSet<>(Arrays.asList(tasks.split(", "))));
+                            device.setAvailableTasks(new HashSet<>(Arrays.asList(tasks.split(", "))));
                         }
                         return device;
                     }

@@ -1,6 +1,6 @@
 package com.vovamisjul.dserver.web;
 
-import com.vovamisjul.dserver.dao.DeviceController;
+import com.vovamisjul.dserver.tasks.DeviceController;
 import com.vovamisjul.dserver.dao.DeviceDao;
 import com.vovamisjul.dserver.tasks.TaskControllerRepository;
 import models.ClientMessage;
@@ -23,10 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 
 import static models.JobStatus.READY;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static tasks.MessageTypes.START;
 

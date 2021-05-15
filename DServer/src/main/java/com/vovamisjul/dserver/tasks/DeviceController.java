@@ -1,4 +1,4 @@
-package com.vovamisjul.dserver.dao;
+package com.vovamisjul.dserver.tasks;
 
 import models.Device;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +18,11 @@ public class DeviceController implements DeviceRepository {
     @Value("${device.maxTimeToDisconnect}")
     private long maxTimeToDisconnect;
 
-    private ConcurrentMap<String, Device> devices = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Device> devices = new ConcurrentHashMap<>();
 
     public List<Device> getAllFreeDevices(String taskId) {
         return devices.values().stream()
-                .filter(device -> device.getAvaliableTasks().contains(taskId))
+                .filter(device -> device.getAvailableTasks().contains(taskId))
                 .filter(device -> device.getJobStatus() == READY)
                 .collect(Collectors.toList());
     }

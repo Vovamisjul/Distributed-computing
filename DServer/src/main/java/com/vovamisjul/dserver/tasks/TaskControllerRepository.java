@@ -4,11 +4,22 @@ import com.vovamisjul.dserver.tasks.objects.RunningTaskInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ResourceUtils;
 import tasks.AbstractTaskController;
 import tasks.TaskInfo;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 @Component
@@ -22,10 +33,51 @@ public class TaskControllerRepository {
 
     @PostConstruct
     public void init() {
-        TaskInfo sha512info = new SHA512TaskInfo();
-        TaskInfo factorial = new FactorialPrimesTaskInfo();
-        taskInfos.put(sha512info.getId(), sha512info);
-        taskInfos.put(factorial.getId(), factorial);
+        loadJars();
+    }
+
+    private void loadJars() {
+        try {
+            URL jarDirectory = getClass().getResource("/jar");
+            if (jarDirectory != null) {
+                File jars = new File(jarDirectory.toURI());
+                for (File file : jars.listFiles()) {
+                    try {
+                        JarFile jarFile = new JarFile(file);
+                        Enumeration<JarEntry> e = jarFile.entries();
+
+                        URL[] urls = {new URL("jar:file:" + file.getPath() + "!/")};
+                        URLClassLoader cl = URLClassLoader.newInstance(urls);
+
+                        while (e.hasMoreElements()) {
+                            JarEntry je = e.nextElement();
+                            if (je.isDirectory() || !je.getName().endsWith(".class")) {
+                                continue;
+                            }
+                            // -6 because of .class
+                            String className = je.getName().substring(0, je.getName().length() - 6);
+                            className = className.replace('/', '.');
+                            Class c = cl.loadClass(className);
+                            if (TaskInfo.class.isAssignableFrom(c)) {
+                                Constructor<TaskInfo>[] ctors = c.getConstructors();
+                                for (Constructor<TaskInfo> ctor : ctors) {
+                                    if (ctor.getParameterCount() == 0) {
+                                        try {
+                                            TaskInfo taskInfo = ctor.newInstance();
+                                            taskInfos.put(taskInfo.getId(), taskInfo);
+                                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ignored) {
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    } catch (IOException | ClassNotFoundException ignored) {
+                    }
+                }
+            }
+        } catch (URISyntaxException ignored) {
+        }
     }
 
     public List<TaskInfo> getTaskInfos() {

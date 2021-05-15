@@ -1,4 +1,4 @@
-package com.vovamisjul.dserver.tasks;
+package com.vovamisjul.task;
 
 import tasks.AbstractTaskController;
 import tasks.TaskInfo;

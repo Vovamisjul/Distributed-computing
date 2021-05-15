@@ -1,4 +1,4 @@
-package com.vovamisjul.dserver.models;
+package models;
 
 public enum JobStatus {
     UNACTIVE,
